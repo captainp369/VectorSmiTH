@@ -1,0 +1,149 @@
+{
+  "pages": [
+    {
+      "id": "yt-demo",
+      "name": "Thumbnail",
+      "width": 1280,
+      "height": 720,
+      "background": "#0b0f1a",
+      "layers": [
+        {
+          "id": "bg",
+          "name": "Background",
+          "x": 0, "y": 0, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "rect", "width": 1280, "height": 720,
+          "fill": { "kind": "linear-gradient", "from": "#111a2e", "to": "#0b0f1a", "angle": 160 }
+        },
+        {
+          "id": "glow",
+          "name": "Blue glow",
+          "x": 1040, "y": 150, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "circle", "radius": 340,
+          "fill": { "kind": "linear-gradient", "from": "rgba(96,165,250,0.30)", "to": "rgba(96,165,250,0)", "angle": 180 }
+        },
+        {
+          "id": "layer-card-blue",
+          "name": "Layer card — blue",
+          "x": 812, "y": 300, "rotation": -8, "opacity": 1, "visible": true, "locked": false,
+          "type": "rect", "width": 300, "height": 200, "cornerRadius": 18,
+          "fill": { "kind": "solid", "color": "#1d4ed8" },
+          "stroke": "#93c5fd", "strokeWidth": 3
+        },
+        {
+          "id": "layer-card-pink",
+          "name": "Layer card — pink",
+          "x": 872, "y": 360, "rotation": -1, "opacity": 1, "visible": true, "locked": false,
+          "type": "rect", "width": 300, "height": 200, "cornerRadius": 18,
+          "fill": { "kind": "solid", "color": "#db2777" },
+          "stroke": "#f9a8d4", "strokeWidth": 3
+        },
+        {
+          "id": "layer-card-amber",
+          "name": "Layer card — amber",
+          "x": 932, "y": 420, "rotation": 6, "opacity": 1, "visible": true, "locked": false,
+          "type": "rect", "width": 300, "height": 200, "cornerRadius": 18,
+          "fill": { "kind": "linear-gradient", "from": "#f59e0b", "to": "#f97316", "angle": 135 },
+          "stroke": "#fde68a", "strokeWidth": 3
+        },
+        {
+          "id": "cursor",
+          "name": "Cursor",
+          "x": 1150, "y": 600, "rotation": -20, "opacity": 1, "visible": true, "locked": false,
+          "type": "polygon", "sides": 3, "radius": 30,
+          "fill": { "kind": "solid", "color": "#ffffff" },
+          "stroke": "#0b0f1a", "strokeWidth": 4
+        },
+        {
+          "id": "spark",
+          "name": "Spark",
+          "x": 96, "y": 106, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "star", "numPoints": 8, "innerRadius": 16, "outerRadius": 38,
+          "fill": { "kind": "solid", "color": "#fbbf24" }
+        },
+        {
+          "id": "headline-1",
+          "name": "Headline line 1",
+          "x": 160, "y": 78, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "text", "text": "I LET AI DESIGN",
+          "fontFamily": "Archivo Black", "fontSize": 72, "fontWeight": "normal",
+          "fill": "#ffffff", "align": "left", "lineHeight": 1.05, "width": 960,
+          "shadow": { "color": "rgba(0,0,0,0.55)", "blur": 18, "offsetX": 0, "offsetY": 5 }
+        },
+        {
+          "id": "headline-2",
+          "name": "Headline line 2",
+          "x": 64, "y": 170, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "text", "text": "MY THUMBNAILS",
+          "fontFamily": "Archivo Black", "fontSize": 94, "fontWeight": "normal",
+          "fill": "#fbbf24", "align": "left", "lineHeight": 1.05, "width": 1060,
+          "shadow": { "color": "rgba(0,0,0,0.55)", "blur": 18, "offsetX": 0, "offsetY": 5 }
+        },
+        {
+          "id": "subline",
+          "name": "Subline",
+          "x": 68, "y": 312, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "text", "text": "EDITABLE LAYERS — NOT PIXELS",
+          "fontFamily": "Bebas Neue", "fontSize": 46, "fontWeight": "normal",
+          "fill": "#94a3b8", "align": "left", "lineHeight": 1.1, "letterSpacing": 2, "width": 700
+        },
+        {
+          "id": "terminal",
+          "name": "Terminal card",
+          "x": 64, "y": 420, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "rect", "width": 560, "height": 190, "cornerRadius": 14,
+          "fill": { "kind": "solid", "color": "#0f172a" },
+          "stroke": "#334155", "strokeWidth": 2
+        },
+        {
+          "id": "term-dot-r",
+          "name": "Dot red",
+          "x": 96, "y": 452, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "circle", "radius": 9, "fill": { "kind": "solid", "color": "#ef4444" }
+        },
+        {
+          "id": "term-dot-y",
+          "name": "Dot yellow",
+          "x": 126, "y": 452, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "circle", "radius": 9, "fill": { "kind": "solid", "color": "#f59e0b" }
+        },
+        {
+          "id": "term-dot-g",
+          "name": "Dot green",
+          "x": 156, "y": 452, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "circle", "radius": 9, "fill": { "kind": "solid", "color": "#22c55e" }
+        },
+        {
+          "id": "term-line-1",
+          "name": "Prompt line",
+          "x": 96, "y": 488, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "text", "text": "> \"make it pop\"",
+          "fontFamily": "Roboto Mono", "fontSize": 28, "fontWeight": "700",
+          "fill": "#e2e8f0", "align": "left", "lineHeight": 1.4, "width": 500
+        },
+        {
+          "id": "term-line-2",
+          "name": "AI line",
+          "x": 96, "y": 536, "rotation": 0, "opacity": 1, "visible": true, "locked": false,
+          "type": "text", "text": "* moving layer 3... done",
+          "fontFamily": "Roboto Mono", "fontSize": 28, "fontWeight": "400",
+          "fill": "#4ade80", "align": "left", "lineHeight": 1.4, "width": 500
+        },
+        {
+          "id": "badge",
+          "name": "Badge",
+          "x": 668, "y": 618, "rotation": -4, "opacity": 1, "visible": true, "locked": false,
+          "type": "rect", "width": 280, "height": 64, "cornerRadius": 12,
+          "fill": { "kind": "solid", "color": "#ef4444" }
+        },
+        {
+          "id": "badge-text",
+          "name": "Badge label",
+          "x": 668, "y": 632, "rotation": -4, "opacity": 1, "visible": true, "locked": false,
+          "type": "text", "text": "ZERO PHOTOSHOP",
+          "fontFamily": "Inter", "fontSize": 28, "fontWeight": "800",
+          "fill": "#ffffff", "align": "center", "lineHeight": 1.1, "width": 280
+        }
+      ]
+    }
+  ]
+}

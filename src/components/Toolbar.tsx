@@ -241,7 +241,7 @@ export default function Toolbar() {
 
   return (
     <div className="toolbar">
-      <span className="brand">VectorSmith</span>
+      <span className="brand">VectorSmiTH</span>
       <div className="tb-group">
         <button onClick={addText} title="Add text">+ Text</button>
         <div className="popover-anchor">

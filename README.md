@@ -1,4 +1,4 @@
-# VectorSmith
+# VectorSmiTH
 
 **AI-assisted graphic & thumbnail editor — "Canva via Claude Code."**
 
@@ -48,14 +48,22 @@ Subscription users can ignore it.
 ## Quick start
 
 ```bash
-git clone <this-repo> && cd <this-repo>
+git clone https://github.com/captainp369/VectorSmiTH.git && cd VectorSmiTH
 npm install
 npm run dev        # open http://localhost:5173
 claude             # in a second terminal — then just ask for a design
 ```
 
-Try it without AI: `cp examples/thai-youtube-thumbnail.json scene.json` and
-watch the canvas. More in [examples/](examples/README.md).
+### Or let your AI set it up
+
+Paste this into Claude Code (or any coding agent) and it will do the rest:
+
+> Set up this project for me: clone `https://github.com/captainp369/VectorSmiTH.git`,
+> install dependencies, start the dev server, open http://localhost:5173,
+> then ask me what graphic I want to make.
+
+Try it without AI: `cp examples/youtube-thumbnail.json scene.json` and watch
+the canvas. More in [examples/](examples/README.md).
 
 ## Editor features
 
