@@ -355,6 +355,39 @@ export default function CanvasStage() {
     }))
   }
 
+  const finalizeMarquee = () => {
+    if (!marquee) return
+    const box = {
+      x: Math.min(marquee.x1, marquee.x2),
+      y: Math.min(marquee.y1, marquee.y2),
+      w: Math.abs(marquee.x2 - marquee.x1),
+      h: Math.abs(marquee.y2 - marquee.y1),
+    }
+    setMarquee(null)
+    const stage = stageRef.current
+    if (box.w < 3 / zoom && box.h < 3 / zoom) {
+      editor.getState().select([])
+      return
+    }
+    const hit: string[] = []
+    for (const [id, node] of nodeRefs.current) {
+      const l = scene.layers.find((x) => x.id === id)
+      if (!l || !l.visible || l.locked || !stage) continue
+      const b = node.getClientRect({ relativeTo: stage as unknown as Konva.Container })
+      if (b.x < box.x + box.w && b.x + b.width > box.x && b.y < box.y + box.h && b.y + b.height > box.y) {
+        hit.push(id)
+      }
+    }
+    editor.getState().select(hit)
+  }
+
+  // Releasing the mouse outside the stage must still end the marquee.
+  useEffect(() => {
+    if (!marquee) return
+    window.addEventListener('mouseup', finalizeMarquee)
+    return () => window.removeEventListener('mouseup', finalizeMarquee)
+  })
+
   const editingLayer = scene.layers.find((l) => l.id === editingTextId && l.type === 'text') as
     | TextLayer
     | undefined
@@ -376,7 +409,13 @@ export default function CanvasStage() {
 
   return (
     <div className="canvas-area" ref={containerRef} onWheelCapture={onWheel}>
-      <div className="canvas-scroll">
+      <div
+        className="canvas-scroll"
+        onMouseDown={(e) => {
+          // Clicking the empty area around the canvas deselects.
+          if (e.target === e.currentTarget) editor.getState().select([])
+        }}
+      >
         <div
           className="canvas-wrapper"
           style={{ width: scene.width * zoom, height: scene.height * zoom }}
@@ -399,31 +438,7 @@ export default function CanvasStage() {
               const p = stageRef.current?.getPointerPosition()
               if (p) setMarquee({ ...marquee, x2: p.x / zoom, y2: p.y / zoom })
             }}
-            onMouseUp={() => {
-              if (!marquee) return
-              const box = {
-                x: Math.min(marquee.x1, marquee.x2),
-                y: Math.min(marquee.y1, marquee.y2),
-                w: Math.abs(marquee.x2 - marquee.x1),
-                h: Math.abs(marquee.y2 - marquee.y1),
-              }
-              setMarquee(null)
-              const stage = stageRef.current
-              if (box.w < 3 / zoom && box.h < 3 / zoom) {
-                editor.getState().select([])
-                return
-              }
-              const hit: string[] = []
-              for (const [id, node] of nodeRefs.current) {
-                const l = scene.layers.find((x) => x.id === id)
-                if (!l || !l.visible || l.locked || !stage) continue
-                const b = node.getClientRect({ relativeTo: stage as unknown as Konva.Container })
-                if (b.x < box.x + box.w && b.x + b.width > box.x && b.y < box.y + box.h && b.y + b.height > box.y) {
-                  hit.push(id)
-                }
-              }
-              editor.getState().select(hit)
-            }}
+            onMouseUp={finalizeMarquee}
           >
             <KLayer>
               <Rect
@@ -472,6 +487,11 @@ export default function CanvasStage() {
               {guides.h.map((y, i) => (
                 <Line key={`h${i}`} points={[0, y, scene.width, y]} stroke="#e11d48" strokeWidth={1 / zoom} dash={[4 / zoom, 4 / zoom]} />
               ))}
+            </KLayer>
+            {/* Transformer needs its own listening layer — inside the non-listening
+                guides layer its anchors can't receive clicks (resize/rotate dead,
+                clicks fall through and start a marquee). */}
+            <KLayer>
               <Transformer
                 ref={trRef}
                 rotateEnabled

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useEditor } from '../store'
 import { DEFAULT_MODEL, loadAISettings, runPrompt, saveAISettings } from '../ai'
 
@@ -9,6 +9,15 @@ export default function PromptBox() {
   const [error, setError] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings, setSettings] = useState(loadAISettings)
+
+  useEffect(() => {
+    if (!settingsOpen) return
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest?.('.prompt-box')) setSettingsOpen(false)
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [settingsOpen])
 
   const submit = async () => {
     const text = prompt.trim()

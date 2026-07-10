@@ -327,6 +327,16 @@ textarea:focus {
   font-size: 11px;
 }
 
+.field > span.scrub {
+  cursor: ew-resize;
+  user-select: none;
+  touch-action: none;
+}
+
+.field > span.scrub:hover {
+  color: #3b82f6;
+}
+
 .field input,
 .field select,
 .field textarea {

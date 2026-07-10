@@ -9,8 +9,8 @@ The scene graph format:
 }
 
 Layer types (all share: id, name, x, y, rotation (deg), opacity (0..1), visible, locked, touched?):
-- { "type": "image", "src": string, "width", "height", "cornerRadius"? }
-- { "type": "text", "text", "fontFamily", "fontSize", "fontWeight" ("normal"|"bold"|"400".."900"), "fill": "#hex", "align" ("left"|"center"|"right"), "lineHeight" (multiplier, e.g. 1.1), "width" (wrap box), "stroke"?, "strokeWidth"?, "shadow"?: {color, blur, offsetX, offsetY} }
+- { "type": "image", "src": string, "width", "height", "cornerRadius"?, "crop"?: {x, y, width, height} (source-image px) }
+- { "type": "text", "text", "fontFamily", "fontSize", "fontWeight" ("normal"|"bold"|"400".."900"), "fill": "#hex", "align" ("left"|"center"|"right"), "lineHeight" (multiplier, e.g. 1.1), "letterSpacing"? (px), "width" (wrap box), "stroke"?, "strokeWidth"? (text outline/border), "shadow"?: {color, blur, offsetX, offsetY} }
 - { "type": "rect", "width", "height", "fill", "cornerRadius"?, "stroke"?, "strokeWidth"? }
 - { "type": "circle", "radius", "fill" }  // x,y is the circle CENTER
 - { "type": "polygon", "sides", "radius", "fill" }  // regular n-gon, x,y CENTER, first vertex up
@@ -82,6 +82,9 @@ function extractJson(text: string): unknown {
 
 export async function runPrompt(prompt: string, scene: Scene, settings: AISettings): Promise<Scene> {
   const { lean, stash } = stashAssets(scene)
+  const { useFonts } = await import('./fonts')
+  const custom = useFonts.getState().custom
+  const fontNote = custom.length ? `\n\nAdditional custom fonts available: ${custom.join(', ')}` : ''
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -98,7 +101,7 @@ export async function runPrompt(prompt: string, scene: Scene, settings: AISettin
       messages: [
         {
           role: 'user',
-          content: `Current scene graph:\n\`\`\`json\n${JSON.stringify(lean, null, 1)}\n\`\`\`\n\nRequest: ${prompt}`,
+          content: `Current scene graph:\n\`\`\`json\n${JSON.stringify(lean, null, 1)}\n\`\`\`${fontNote}\n\nRequest: ${prompt}`,
         },
       ],
     }),

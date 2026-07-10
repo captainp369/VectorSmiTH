@@ -27,6 +27,8 @@ export interface ImageLayer extends LayerBase {
   width: number
   height: number
   cornerRadius?: number
+  /** Visible region of the source image, in source-image pixels. Omitted = whole image. */
+  crop?: { x: number; y: number; width: number; height: number }
 }
 
 export interface TextLayer extends LayerBase {
@@ -38,6 +40,7 @@ export interface TextLayer extends LayerBase {
   fill: string
   align: 'left' | 'center' | 'right'
   lineHeight: number // multiplier
+  letterSpacing?: number // px
   width: number // wrapping box width
   stroke?: string
   strokeWidth?: number

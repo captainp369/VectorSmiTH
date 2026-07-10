@@ -6,7 +6,10 @@ import { useEditor } from './store'
 import { renderRaster, renderSVG } from './export'
 import './styles.css'
 
+import { loadAssetFonts } from './fonts'
+
 startSync()
+loadAssetFonts()
 
 // Debug/scripting handle (used by tests and power users in the console).
 ;(window as unknown as Record<string, unknown>).SC = { useEditor, renderRaster, renderSVG }

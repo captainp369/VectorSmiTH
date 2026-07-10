@@ -32,8 +32,8 @@ top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`.
 
 | type | extra fields |
 |------|--------------|
-| `image` | `src`, `width`, `height`, `cornerRadius?` |
-| `text` | `text`, `fontFamily`, `fontSize`, `fontWeight` (`"normal"`,`"bold"`,`"400"`–`"900"`), `fill`, `align` (`left/center/right`), `lineHeight` (multiplier), `width` (wrap box), `stroke?`, `strokeWidth?`, `shadow?` `{color, blur, offsetX, offsetY}` |
+| `image` | `src`, `width`, `height`, `cornerRadius?`, `crop?` `{x, y, width, height}` in source-image pixels (region shown in the layer box) |
+| `text` | `text`, `fontFamily`, `fontSize`, `fontWeight` (`"normal"`,`"bold"`,`"400"`–`"900"`), `fill`, `align` (`left/center/right`), `lineHeight` (multiplier), `letterSpacing?` (px), `width` (wrap box), `stroke?` + `strokeWidth?` (text outline/border), `shadow?` `{color, blur, offsetX, offsetY}` |
 | `rect` | `width`, `height`, `fill` (Fill), `cornerRadius?`, `stroke?`, `strokeWidth?` |
 | `circle` | `radius`, `fill` (Fill) — **x,y is the center** |
 | `polygon` | `sides`, `radius`, `fill` (Fill) — regular n-gon, **x,y is the center**, first vertex points up |
@@ -47,6 +47,9 @@ rgba() allowed for transparent stops).
 Fonts available: Inter, Archivo Black, Bebas Neue, Playfair Display,
 Noto Sans Thai, Kanit, Roboto Mono, Arial, Georgia, Impact.
 For Thai text use Kanit or Noto Sans Thai.
+Font files (.ttf/.otf/.woff/.woff2) in `assets/` are auto-registered as extra
+families named after the file (e.g. `assets/My_Brand.ttf` → "My Brand") — you
+may use those too.
 
 ## Design guidance
 

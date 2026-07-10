@@ -32,7 +32,13 @@ export function layerConfig(layer: Layer): { cls: string; config: Record<string,
     case 'image':
       return {
         cls: 'Image',
-        config: { ...base, width: layer.width, height: layer.height, cornerRadius: layer.cornerRadius ?? 0 },
+        config: {
+          ...base,
+          width: layer.width,
+          height: layer.height,
+          cornerRadius: layer.cornerRadius ?? 0,
+          ...(layer.crop ? { crop: layer.crop } : {}),
+        },
       }
     case 'text':
       return {
@@ -46,6 +52,7 @@ export function layerConfig(layer: Layer): { cls: string; config: Record<string,
           fill: layer.fill,
           align: layer.align,
           lineHeight: layer.lineHeight,
+          letterSpacing: layer.letterSpacing ?? 0,
           width: layer.width,
           wrap: 'word',
           ...(layer.stroke && layer.strokeWidth

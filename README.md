@@ -68,10 +68,13 @@ watch the canvas. More in [examples/](examples/README.md).
 - **Layers panel** — drag to reorder z-index, show/hide, lock, rename
   (double-click), to-front/back.
 - **Text** — double-click on canvas to edit content; font, size, weight,
-  color, alignment, line height in the inspector. Thai fonts included
-  (Kanit, Noto Sans Thai).
-- **Layer types** — image, text, solid/gradient rectangle, circle, regular
-  polygon, star, line.
+  color, alignment, line height, letter spacing, and outline/border in the
+  inspector. Thai fonts included (Kanit, Noto Sans Thai), plus import your
+  own font files (.ttf/.otf/.woff) or type any system font name.
+- **Layer types** — image (with crop), text, solid/gradient rectangle,
+  circle, regular polygon, star, line.
+- **Inspector** — every numeric field is scrubbable: drag its label
+  left/right to dial the value in.
 - **Assets** — drag & drop images onto the canvas; files land in `assets/`
   so the AI can reference them by path.
 - **Export** — PNG / JPG / SVG at exact canvas dimensions (1×–3×), rendered

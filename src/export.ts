@@ -114,18 +114,29 @@ export async function renderSVG(scene: Scene): Promise<Blob> {
         } catch {
           break
         }
-        const rx = layer.cornerRadius
-          ? (() => {
-              const cid = `clip-${layer.id}`
-              defs.push(
-                `<clipPath id="${cid}"><rect width="${layer.width}" height="${layer.height}" rx="${layer.cornerRadius}"/></clipPath>`,
-              )
-              return ` clip-path="url(#${cid})"`
-            })()
-          : ''
-        body.push(
-          `<image ${tf}${op}${rx} width="${layer.width}" height="${layer.height}" href="${href}" preserveAspectRatio="none"/>`,
-        )
+        const needsClip = layer.cornerRadius || layer.crop
+        let clip = ''
+        if (needsClip) {
+          const cid = `clip-${layer.id}`
+          defs.push(
+            `<clipPath id="${cid}"><rect width="${layer.width}" height="${layer.height}" rx="${layer.cornerRadius ?? 0}"/></clipPath>`,
+          )
+          clip = ` clip-path="url(#${cid})"`
+        }
+        if (layer.crop) {
+          // Scale the full image so the crop region fills the layer box, then clip.
+          const img = await loadImage(href)
+          const sx = layer.width / layer.crop.width
+          const sy = layer.height / layer.crop.height
+          body.push(
+            `<g ${tf}${op}${clip}><image x="${-layer.crop.x * sx}" y="${-layer.crop.y * sy}" ` +
+              `width="${img.naturalWidth * sx}" height="${img.naturalHeight * sy}" href="${href}" preserveAspectRatio="none"/></g>`,
+          )
+        } else {
+          body.push(
+            `<image ${tf}${op}${clip} width="${layer.width}" height="${layer.height}" href="${href}" preserveAspectRatio="none"/>`,
+          )
+        }
         break
       }
       case 'rect': {
@@ -197,6 +208,7 @@ export async function renderSVG(scene: Scene): Promise<Blob> {
         body.push(
           `<text ${tf}${op} font-family="${esc(layer.fontFamily)}" font-size="${layer.fontSize}" ` +
             `font-weight="${layer.fontWeight === 'normal' ? '400' : layer.fontWeight}" fill="${esc(layer.fill)}" ` +
+            (layer.letterSpacing ? `letter-spacing="${layer.letterSpacing}" ` : '') +
             `text-anchor="${anchor}"${stroke}>${tspans}</text>`,
         )
         break

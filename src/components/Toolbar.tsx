@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { nanoid, makeLayerName, useEditor } from '../store'
 import type { Layer, Scene } from '../types'
 import { CANVAS_PRESETS, defaultScene } from '../types'
@@ -59,6 +59,22 @@ export default function Toolbar() {
   const [scaleLayers, setScaleLayers] = useState(false)
   const [exportScale, setExportScale] = useState(1)
   const [busy, setBusy] = useState('')
+
+  const closeAll = () => {
+    setSizeOpen(false)
+    setExportOpen(false)
+    setShapeOpen(false)
+  }
+
+  // Any click that isn't inside a popover (or its trigger) collapses open menus.
+  useEffect(() => {
+    if (!sizeOpen && !exportOpen && !shapeOpen) return
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest?.('.popover-anchor')) closeAll()
+    }
+    document.addEventListener('pointerdown', onDown)
+    return () => document.removeEventListener('pointerdown', onDown)
+  }, [sizeOpen, exportOpen, shapeOpen])
 
   const addText = () => {
     const s = editor.getState().scene
@@ -223,7 +239,7 @@ export default function Toolbar() {
       <div className="tb-group">
         <button onClick={addText} title="Add text">+ Text</button>
         <div className="popover-anchor">
-          <button onClick={() => setShapeOpen(!shapeOpen)} title="Add shape">+ Shape ▾</button>
+          <button onClick={() => { const v = !shapeOpen; closeAll(); setShapeOpen(v) }} title="Add shape">+ Shape ▾</button>
           {shapeOpen && (
             <div className="popover" onClick={() => setShapeOpen(false)}>
               <button className="preset" onClick={addRect}>▭ Rectangle</button>
@@ -255,7 +271,7 @@ export default function Toolbar() {
       </div>
 
       <div className="tb-group popover-anchor">
-        <button onClick={() => { setW(scene.width); setH(scene.height); setSizeOpen(!sizeOpen) }}>
+        <button onClick={() => { const v = !sizeOpen; closeAll(); setW(scene.width); setH(scene.height); setSizeOpen(v) }}>
           {scene.width} × {scene.height}
         </button>
         {sizeOpen && (
@@ -315,7 +331,7 @@ export default function Toolbar() {
       </div>
 
       <div className="tb-group popover-anchor">
-        <button className="primary" onClick={() => setExportOpen(!exportOpen)}>Export</button>
+        <button className="primary" onClick={() => { const v = !exportOpen; closeAll(); setExportOpen(v) }}>Export</button>
         {exportOpen && (
           <div className="popover popover-right">
             <div className="popover-title">Export {scene.width}×{scene.height}</div>
