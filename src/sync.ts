@@ -1,53 +1,41 @@
 import { useEditor } from './store'
-import type { Scene } from './types'
-import { defaultScene } from './types'
+import type { Project } from './types'
+import { migrateProject } from './types'
 
 const LS_KEY = 'vectorsmith:scene'
 let applyingExternal = false
 let lastPosted = ''
 let bridgeAvailable = false
 
-function sanitize(raw: unknown): Scene | null {
-  if (!raw || typeof raw !== 'object') return null
-  const s = raw as Scene
-  if (typeof s.width !== 'number' || typeof s.height !== 'number' || !Array.isArray(s.layers)) return null
-  return {
-    width: s.width,
-    height: s.height,
-    background: typeof s.background === 'string' ? s.background : '#ffffff',
-    layers: s.layers.filter((l) => l && typeof l === 'object' && typeof l.id === 'string' && typeof l.type === 'string'),
-  }
-}
-
-async function fetchScene(): Promise<Scene | null> {
+async function fetchProject(): Promise<Project | null> {
   try {
     const res = await fetch('/api/scene')
     if (!res.ok) return null
     bridgeAvailable = true
-    return sanitize(await res.json())
+    return migrateProject(await res.json())
   } catch {
     return null
   }
 }
 
-function applyExternal(scene: Scene) {
+function applyExternal(project: Project) {
   applyingExternal = true
-  lastPosted = JSON.stringify(scene)
-  useEditor.getState().replaceScene(scene, { external: true })
+  lastPosted = JSON.stringify(project)
+  useEditor.getState().replaceProject(project, { external: true })
   applyingExternal = false
 }
 
-/** Load initial scene (scene.json wins over localStorage) and start two-way sync. */
+/** Load initial project (scene.json wins over localStorage) and start two-way sync. */
 export async function startSync() {
-  const fromFile = await fetchScene()
+  const fromFile = await fetchProject()
   if (fromFile) {
     applyExternal(fromFile)
   } else {
     try {
-      const cached = sanitize(JSON.parse(localStorage.getItem(LS_KEY) ?? 'null'))
+      const cached = migrateProject(JSON.parse(localStorage.getItem(LS_KEY) ?? 'null'))
       if (cached) {
         applyingExternal = true
-        useEditor.getState().replaceScene(cached, { external: true, recordHistory: false })
+        useEditor.getState().replaceProject(cached, { external: true, recordHistory: false })
         applyingExternal = false
       }
     } catch {
@@ -65,14 +53,14 @@ export async function startSync() {
   // UI -> disk + localStorage (debounced)
   let timer: ReturnType<typeof setTimeout> | undefined
   useEditor.subscribe((state, prev) => {
-    if (state.scene === prev.scene || applyingExternal) return
+    if (state.project === prev.project || applyingExternal) return
     clearTimeout(timer)
     timer = setTimeout(() => {
-      const json = JSON.stringify(state.scene)
+      const json = JSON.stringify(state.project)
       try {
         localStorage.setItem(LS_KEY, json)
       } catch {
-        /* quota — data-URL heavy scenes may not fit; scene.json still saves */
+        /* quota — data-URL heavy projects may not fit; scene.json still saves */
       }
       if (bridgeAvailable && json !== lastPosted) {
         lastPosted = json
@@ -85,10 +73,10 @@ export async function startSync() {
   try {
     const events = new EventSource('/api/scene/events')
     events.onmessage = async () => {
-      const scene = await fetchScene()
-      if (!scene) return
-      if (JSON.stringify(scene) === JSON.stringify(useEditor.getState().scene)) return
-      applyExternal(scene)
+      const project = await fetchProject()
+      if (!project) return
+      if (JSON.stringify(project) === JSON.stringify(useEditor.getState().project)) return
+      applyExternal(project)
     }
   } catch {
     /* no dev bridge (static build) */

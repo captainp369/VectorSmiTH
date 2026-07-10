@@ -1,11 +1,38 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Stage, Layer as KLayer, Rect, Text, Circle, Line, Image as KImage, RegularPolygon, Star, Transformer } from 'react-konva'
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Stage, Layer as KLayer, Group, Rect, Text, Circle, Line, Image as KImage, RegularPolygon, Star, Transformer } from 'react-konva'
 import type Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import useImage from 'use-image'
-import { useEditor } from '../store'
-import type { Layer, Scene, TextLayer } from '../types'
+import { useEditor, useScene } from '../store'
+import type { ImageLayer, Layer, Scene, TextLayer } from '../types'
 import { layerConfig } from '../konvaConfig'
+import { loadImage } from '../export'
+
+// Synchronous image cache: a remounted node gets its HTMLImageElement on the
+// first render, so its Konva hit region never flashes empty (use-image would
+// return undefined until its own async load resolves).
+const readyImages = new Map<string, HTMLImageElement>()
+function useCachedImage(src: string): HTMLImageElement | undefined {
+  const [img, setImg] = useState(() => (src ? readyImages.get(src) : undefined))
+  useEffect(() => {
+    if (!src) return
+    const cached = readyImages.get(src)
+    if (cached) {
+      setImg(cached)
+      return
+    }
+    let alive = true
+    loadImage(src)
+      .then((el) => {
+        readyImages.set(src, el)
+        if (alive) setImg(el)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [src])
+  return src ? img : undefined
+}
 
 const SNAP_SCREEN_PX = 6
 
@@ -26,29 +53,35 @@ function snapValue(value: number, targets: number[], threshold: number): { value
 function LayerNode(props: {
   layer: Layer
   isEditing: boolean
+  /** While cropping another layer, everything else must not intercept events. */
+  muted?: boolean
   registerRef: (id: string, node: Konva.Node | null) => void
   onSelect: (e: KonvaEventObject<MouseEvent>) => void
   onDragStart: (e: KonvaEventObject<DragEvent>) => void
   onDragMove: (e: KonvaEventObject<DragEvent>) => void
   onDragEnd: (e: KonvaEventObject<DragEvent>) => void
+  onTransformStart?: () => void
+  onTransform?: () => void
   onTransformEnd: () => void
   onDblClick: () => void
 }) {
   const { layer, isEditing } = props
   const { cls, config } = layerConfig(layer)
-  const [img] = useImage(layer.type === 'image' ? layer.src : '', 'anonymous')
+  const img = useCachedImage(layer.type === 'image' ? layer.src : '')
 
   const common = {
     ...config,
     visible: layer.visible && !isEditing,
     draggable: !layer.locked,
-    listening: layer.visible && !layer.locked,
+    listening: layer.visible && !layer.locked && !props.muted,
     ref: (node: Konva.Node | null) => props.registerRef(layer.id, node),
     onClick: props.onSelect,
     onTap: props.onSelect,
     onDragStart: props.onDragStart,
     onDragMove: props.onDragMove,
     onDragEnd: props.onDragEnd,
+    onTransformStart: props.onTransformStart,
+    onTransform: props.onTransform,
     onTransformEnd: props.onTransformEnd,
     onDblClick: props.onDblClick,
     onDblTap: props.onDblClick,
@@ -130,17 +163,48 @@ function TextEditOverlay({ layer, zoom, stage, onDone }: {
   )
 }
 
+/** Dimmed preview of the full source image while cropping. */
+function CropGhost({ layer }: { layer: ImageLayer }) {
+  const img = useCachedImage(layer.src)
+  const crop = layer.crop
+  if (!img || !crop) return null
+  const sx = layer.width / crop.width
+  const sy = layer.height / crop.height
+  return (
+    <Group x={layer.x} y={layer.y} rotation={layer.rotation} listening={false}>
+      <KImage
+        image={img}
+        opacity={0.35}
+        x={-crop.x * sx}
+        y={-crop.y * sy}
+        width={img.naturalWidth * sx}
+        height={img.naturalHeight * sy}
+      />
+    </Group>
+  )
+}
+
 export default function CanvasStage() {
-  const scene = useEditor((s) => s.scene)
+  const scene = useScene()
   const selection = useEditor((s) => s.selection)
   const editingTextId = useEditor((s) => s.editingTextId)
+  const croppingId = useEditor((s) => s.croppingId)
   const editor = useEditor
 
   const containerRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<Konva.Stage>(null)
   const trRef = useRef<Konva.Transformer>(null)
+  const cropTrRef = useRef<Konva.Transformer>(null)
   const nodeRefs = useRef(new Map<string, Konva.Node>())
   const dragOrigins = useRef<Map<string, { x: number; y: number }> | null>(null)
+  const cropGesture = useRef<{
+    x: number
+    y: number
+    w: number
+    h: number
+    crop: NonNullable<ImageLayer['crop']>
+    natural: { w: number; h: number }
+  } | null>(null)
 
   const [zoom, setZoomState] = useState(1)
   const [fontEpoch, setFontEpoch] = useState(0)
@@ -196,20 +260,43 @@ export default function CanvasStage() {
     if (!userZoomed.current && containerSize.w > 0) setZoomState(fitZoom)
   }, [fitZoom, containerSize.w])
 
-  // Attach transformer to the selected, unlocked, visible nodes.
+  // Attach transformer to the selected, unlocked, visible nodes (hidden in crop mode).
   useEffect(() => {
     const tr = trRef.current
     if (!tr) return
-    const nodes = selection
-      .map((id) => nodeRefs.current.get(id))
-      .filter((n): n is Konva.Node => {
-        if (!n) return false
-        const l = scene.layers.find((x) => x.id === n.id())
-        return !!l && !l.locked && l.visible && n.id() !== editingTextId
-      })
+    const nodes = croppingId
+      ? []
+      : selection
+          .map((id) => nodeRefs.current.get(id))
+          .filter((n): n is Konva.Node => {
+            if (!n) return false
+            const l = scene.layers.find((x) => x.id === n.id())
+            return !!l && !l.locked && l.visible && n.id() !== editingTextId
+          })
     tr.nodes(nodes)
     tr.getLayer()?.batchDraw()
-  }, [selection, scene.layers, editingTextId])
+  }, [selection, scene.layers, editingTextId, croppingId])
+
+  // Crop-mode transformer follows the cropping node.
+  useEffect(() => {
+    const tr = cropTrRef.current
+    if (!tr) return
+    const node = croppingId ? nodeRefs.current.get(croppingId) : undefined
+    tr.nodes(node ? [node] : [])
+    tr.getLayer()?.batchDraw()
+  }, [croppingId, scene.layers])
+
+  // Leaving the selection (or losing the layer) exits crop mode.
+  useEffect(() => {
+    if (croppingId && !selection.includes(croppingId)) editor.getState().setCropping(null)
+  }, [selection, croppingId])
+
+  // Konva's Transformer caches its anchor layout in screen space and does not
+  // watch stage scale — without this, handles drift (and mis-hit) after zooming.
+  useEffect(() => {
+    trRef.current?.forceUpdate()
+    cropTrRef.current?.forceUpdate()
+  }, [zoom])
 
   const registerRef = (id: string, node: Konva.Node | null) => {
     if (node) nodeRefs.current.set(id, node)
@@ -355,6 +442,115 @@ export default function CanvasStage() {
     }))
   }
 
+  // ----- crop mode -----
+
+  const beginCropGesture = (layer: ImageLayer) => {
+    const node = nodeRefs.current.get(layer.id) as Konva.Image | undefined
+    const img = node?.image() as HTMLImageElement | undefined
+    const natural = { w: img?.naturalWidth ?? 0, h: img?.naturalHeight ?? 0 }
+    cropGesture.current = {
+      x: layer.x,
+      y: layer.y,
+      w: layer.width,
+      h: layer.height,
+      crop: layer.crop ?? { x: 0, y: 0, width: natural.w || layer.width, height: natural.h || layer.height },
+      natural,
+    }
+  }
+
+  /** Stage-space delta rotated into the layer's local axes. */
+  const localDelta = (dx: number, dy: number, rotation: number) => {
+    const a = (rotation * Math.PI) / 180
+    return { x: dx * Math.cos(a) + dy * Math.sin(a), y: -dx * Math.sin(a) + dy * Math.cos(a) }
+  }
+
+  const enterCropMode = (layer: ImageLayer) => {
+    if (layer.locked) return
+    if (!layer.crop) {
+      const node = nodeRefs.current.get(layer.id) as Konva.Image | undefined
+      const img = node?.image() as HTMLImageElement | undefined
+      if (!img?.naturalWidth) return
+      editor.getState().updateLayer(layer.id, {
+        crop: { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight },
+      } as Partial<Layer>)
+    }
+    editor.getState().select([layer.id])
+    editor.getState().setCropping(layer.id)
+  }
+
+  // Dragging the crop frame's handles crops from that side: the image content
+  // stays put (source px per screen px is invariant), only the window changes.
+  const handleCropTransformStart = (layer: ImageLayer) => () => {
+    editor.getState().checkpoint()
+    beginCropGesture(layer)
+  }
+
+  const handleCropTransform = (layer: ImageLayer) => () => {
+    const st = cropGesture.current
+    const node = nodeRefs.current.get(layer.id) as Konva.Image | undefined
+    if (!st || !node) return
+    const rx = st.crop.width / st.w
+    const ry = st.crop.height / st.h
+    const bw = Math.max(2, node.width() * node.scaleX())
+    const bh = Math.max(2, node.height() * node.scaleY())
+    const d = localDelta(node.x() - st.x, node.y() - st.y, layer.rotation)
+    let cx = st.crop.x + d.x * rx
+    let cy = st.crop.y + d.y * ry
+    let cw = bw * rx
+    let ch = bh * ry
+    if (st.natural.w) {
+      cx = Math.max(0, Math.min(cx, st.natural.w - 1))
+      cw = Math.max(1, Math.min(cw, st.natural.w - cx))
+    }
+    if (st.natural.h) {
+      cy = Math.max(0, Math.min(cy, st.natural.h - 1))
+      ch = Math.max(1, Math.min(ch, st.natural.h - cy))
+    }
+    node.setAttrs({ width: bw, height: bh, scaleX: 1, scaleY: 1, crop: { x: cx, y: cy, width: cw, height: ch } })
+  }
+
+  const handleCropTransformEnd = (layer: ImageLayer) => () => {
+    const node = nodeRefs.current.get(layer.id) as Konva.Image | undefined
+    cropGesture.current = null
+    if (!node) return
+    const crop = node.crop() as ImageLayer['crop']
+    editor.getState().transient((s) => ({
+      ...s,
+      layers: s.layers.map((l) =>
+        l.id === layer.id
+          ? ({ ...l, x: node.x(), y: node.y(), width: node.width(), height: node.height(), crop, touched: true } as Layer)
+          : l,
+      ),
+    }))
+  }
+
+  // Dragging the image in crop mode slides the photo inside the fixed frame.
+  const handleCropDragStart = (layer: ImageLayer) => () => {
+    editor.getState().checkpoint()
+    beginCropGesture(layer)
+  }
+
+  const handleCropDragMove = (layer: ImageLayer) => (e: KonvaEventObject<DragEvent>) => {
+    const st = cropGesture.current
+    if (!st) return
+    const node = e.target as Konva.Image
+    // Konva drag positions are pointer-anchored, so this delta is cumulative
+    // from the drag start even though we pin the node back every event.
+    const d = localDelta(node.x() - st.x, node.y() - st.y, layer.rotation)
+    node.position({ x: st.x, y: st.y })
+    const rx = st.crop.width / st.w
+    const ry = st.crop.height / st.h
+    let cx = st.crop.x - d.x * rx
+    let cy = st.crop.y - d.y * ry
+    if (st.natural.w) cx = Math.max(0, Math.min(cx, st.natural.w - st.crop.width))
+    if (st.natural.h) cy = Math.max(0, Math.min(cy, st.natural.h - st.crop.height))
+    editor.getState().updateLayer(layer.id, { crop: { ...st.crop, x: cx, y: cy } } as Partial<Layer>, { transient: true })
+  }
+
+  const handleCropDragEnd = () => {
+    cropGesture.current = null
+  }
+
   const finalizeMarquee = () => {
     if (!marquee) return
     const box = {
@@ -391,6 +587,38 @@ export default function CanvasStage() {
   const editingLayer = scene.layers.find((l) => l.id === editingTextId && l.type === 'text') as
     | TextLayer
     | undefined
+  const croppingLayer = scene.layers.find((l) => l.id === croppingId && l.type === 'image') as
+    | ImageLayer
+    | undefined
+
+  const renderLayer = (layer: Layer) => {
+    const cropping = layer.id === croppingId
+    return (
+      <LayerNode
+        key={layer.type === 'text' ? `${layer.id}:f${fontEpoch}` : layer.id}
+        layer={layer}
+        isEditing={layer.id === editingTextId}
+        muted={croppingId !== null && !cropping}
+        registerRef={registerRef}
+        onSelect={handleSelect(layer)}
+        onDragStart={cropping ? handleCropDragStart(layer as ImageLayer) : handleDragStart(layer)}
+        onDragMove={cropping ? handleCropDragMove(layer as ImageLayer) : handleDragMove(layer)}
+        onDragEnd={cropping ? handleCropDragEnd : handleDragEnd}
+        onTransformStart={cropping ? handleCropTransformStart(layer as ImageLayer) : undefined}
+        onTransform={cropping ? handleCropTransform(layer as ImageLayer) : undefined}
+        onTransformEnd={cropping ? handleCropTransformEnd(layer as ImageLayer) : handleTransformEnd}
+        onDblClick={() => {
+          if (layer.locked) return
+          if (layer.type === 'text') {
+            editor.getState().select([layer.id])
+            editor.getState().setEditingText(layer.id)
+          } else if (layer.type === 'image') {
+            enterCropMode(layer)
+          }
+        }}
+      />
+    )
+  }
 
   const finishTextEdit = (text: string | null) => {
     const state = editor.getState()
@@ -429,6 +657,11 @@ export default function CanvasStage() {
             onMouseDown={(e) => {
               // Start a marquee when pressing on empty canvas; a no-move press deselects.
               if (e.target === e.target.getStage() || e.target.name() === 'canvas-bg') {
+                if (croppingId) {
+                  // First click outside the image just leaves crop mode.
+                  editor.getState().setCropping(null)
+                  return
+                }
                 const p = stageRef.current?.getPointerPosition()
                 if (p) setMarquee({ x1: p.x / zoom, y1: p.y / zoom, x2: p.x / zoom, y2: p.y / zoom })
               }
@@ -450,23 +683,10 @@ export default function CanvasStage() {
                 fill={scene.background}
               />
               {scene.layers.map((layer) => (
-                <LayerNode
-                  key={layer.type === 'text' ? `${layer.id}:f${fontEpoch}` : layer.id}
-                  layer={layer}
-                  isEditing={layer.id === editingTextId}
-                  registerRef={registerRef}
-                  onSelect={handleSelect(layer)}
-                  onDragStart={handleDragStart(layer)}
-                  onDragMove={handleDragMove(layer)}
-                  onDragEnd={handleDragEnd}
-                  onTransformEnd={handleTransformEnd}
-                  onDblClick={() => {
-                    if (layer.type === 'text' && !layer.locked) {
-                      editor.getState().select([layer.id])
-                      editor.getState().setEditingText(layer.id)
-                    }
-                  }}
-                />
+                <Fragment key={`f-${layer.id}`}>
+                  {layer.id === croppingId && croppingLayer && <CropGhost layer={croppingLayer} />}
+                  {renderLayer(layer)}
+                </Fragment>
               ))}
             </KLayer>
             <KLayer listening={false}>
@@ -500,6 +720,19 @@ export default function CanvasStage() {
                 anchorCornerRadius={2}
                 borderStroke="#3b82f6"
                 anchorStroke="#3b82f6"
+                boundBoxFunc={(oldBox, newBox) =>
+                  Math.abs(newBox.width) < 2 || Math.abs(newBox.height) < 2 ? oldBox : newBox
+                }
+              />
+              <Transformer
+                ref={cropTrRef}
+                rotateEnabled={false}
+                keepRatio={false}
+                anchorSize={9}
+                anchorCornerRadius={2}
+                borderStroke="#f59e0b"
+                anchorStroke="#f59e0b"
+                borderDash={[5, 5]}
                 boundBoxFunc={(oldBox, newBox) =>
                   Math.abs(newBox.width) < 2 || Math.abs(newBox.height) < 2 ? oldBox : newBox
                 }

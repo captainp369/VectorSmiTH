@@ -71,8 +71,13 @@ watch the canvas. More in [examples/](examples/README.md).
   color, alignment, line height, letter spacing, and outline/border in the
   inspector. Thai fonts included (Kanit, Noto Sans Thai), plus import your
   own font files (.ttf/.otf/.woff) or type any system font name.
-- **Layer types** — image (with crop), text, solid/gradient rectangle,
-  circle, regular polygon, star, line.
+- **Layer types** — image (with interactive crop: drag handles to trim any
+  side, drag the photo to slide it inside the frame), text, solid/gradient
+  rectangle, circle, regular polygon, star, line.
+- **Multi-page projects** — pages bar for carousels and variants: add,
+  duplicate, rename, delete pages; "export all pages" numbers the files.
+  A continuous IG carousel is one image repeated across pages, shifted one
+  page-width left each slide — the AI knows the trick.
 - **Inspector** — every numeric field is scrubbable: drag its label
   left/right to dial the value in.
 - **Assets** — drag & drop images onto the canvas; files land in `assets/`

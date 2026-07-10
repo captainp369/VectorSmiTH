@@ -366,6 +366,66 @@ textarea:focus {
   min-width: 0;
 }
 
+/* ---------- pages bar ---------- */
+
+.pages-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #1d1e24;
+  border-top: 1px solid #2b2c33;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+
+.pages-label {
+  color: #9a9aa5;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-right: 4px;
+}
+
+.page-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid #36373f;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.page-tab:hover {
+  background: #26272e;
+}
+
+.page-tab.active {
+  background: #26314a;
+  border-color: #3b82f6;
+}
+
+.page-tab input {
+  width: 90px;
+  padding: 1px 4px;
+}
+
+.page-close {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  opacity: 0.6;
+}
+
+.page-close:hover {
+  opacity: 1;
+  color: #ff6b7a;
+  background: none;
+}
+
 /* ---------- prompt box ---------- */
 
 .prompt-box {

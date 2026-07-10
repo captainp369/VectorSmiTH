@@ -19,13 +19,27 @@ stable when editing. New image layers must reference files in `assets/`
 
 ## Scene graph schema
 
+`scene.json` holds a **project with one or more pages** (a page = one canvas;
+multiple pages = carousel slides / variants). Legacy single-scene files
+(top-level `width`/`layers`) are still accepted and migrated on load.
+
 ```jsonc
 {
-  "width": 1280, "height": 720,      // canvas px
-  "background": "#ffffff",
-  "layers": [ /* index 0 = bottom of z-stack */ ]
+  "pages": [
+    {
+      "id": "abc123", "name": "Page 1",
+      "width": 1280, "height": 720,      // canvas px
+      "background": "#ffffff",
+      "layers": [ /* index 0 = bottom of z-stack */ ]
+    }
+  ]
 }
 ```
+
+Keep page `id`s stable. For a **continuous carousel** (one visual flowing
+across slides): put the same image layer on consecutive pages, shifting its
+`x` by `-width` per page — layers are clipped to the canvas, so the overflow
+simply appears on the next slide.
 
 All layers share: `id`, `name`, `x`, `y`, `rotation` (deg, clockwise, around
 top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`.

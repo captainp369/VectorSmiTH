@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { nanoid, makeLayerName, useEditor } from '../store'
+import { getScene, nanoid, makeLayerName, useEditor, useScene } from '../store'
 import type { Layer, Scene } from '../types'
-import { CANVAS_PRESETS, defaultScene } from '../types'
+import { CANVAS_PRESETS, defaultProject, migrateProject } from '../types'
 import { uploadAsset } from '../sync'
-import { downloadBlob, loadImage, renderRaster, renderSVG, sceneWithInlinedAssets } from '../export'
+import { downloadBlob, loadImage, projectWithInlinedAssets, renderRaster, renderSVG } from '../export'
 
 function baseLayer(scene: Scene, name: string) {
   return {
@@ -25,7 +25,7 @@ export async function addImageLayers(files: File[], at?: { x: number; y: number 
     if (!file.type.startsWith('image/')) continue
     const src = await uploadAsset(file)
     const img = await loadImage(src)
-    const scene = useEditor.getState().scene
+    const scene = getScene()
     const maxW = scene.width * 0.6
     const scale = Math.min(1, maxW / img.naturalWidth, (scene.height * 0.8) / img.naturalHeight)
     const w = Math.round(img.naturalWidth * scale)
@@ -45,7 +45,8 @@ export async function addImageLayers(files: File[], at?: { x: number; y: number 
 }
 
 export default function Toolbar() {
-  const scene = useEditor((s) => s.scene)
+  const scene = useScene()
+  const pageCount = useEditor((s) => s.project.pages.length)
   const canUndo = useEditor((s) => s.past.length > 0)
   const canRedo = useEditor((s) => s.future.length > 0)
   const editor = useEditor
@@ -77,7 +78,7 @@ export default function Toolbar() {
   }, [sizeOpen, exportOpen, shapeOpen])
 
   const addText = () => {
-    const s = editor.getState().scene
+    const s = getScene()
     const layer: Layer = {
       ...baseLayer(s, 'Text'),
       type: 'text',
@@ -95,7 +96,7 @@ export default function Toolbar() {
   }
 
   const addRect = () => {
-    const s = editor.getState().scene
+    const s = getScene()
     const layer: Layer = {
       ...baseLayer(s, 'Rectangle'),
       type: 'rect',
@@ -108,7 +109,7 @@ export default function Toolbar() {
   }
 
   const addCircle = () => {
-    const s = editor.getState().scene
+    const s = getScene()
     const layer: Layer = {
       ...baseLayer(s, 'Circle'),
       type: 'circle',
@@ -122,7 +123,7 @@ export default function Toolbar() {
   }
 
   const addPolygon = (sides: number, name: string) => {
-    const s = editor.getState().scene
+    const s = getScene()
     const layer: Layer = {
       ...baseLayer(s, name),
       type: 'polygon',
@@ -137,7 +138,7 @@ export default function Toolbar() {
   }
 
   const addStar = () => {
-    const s = editor.getState().scene
+    const s = getScene()
     const r = Math.round(Math.min(s.width, s.height) * 0.16)
     const layer: Layer = {
       ...baseLayer(s, 'Star'),
@@ -154,7 +155,7 @@ export default function Toolbar() {
   }
 
   const addLine = () => {
-    const s = editor.getState().scene
+    const s = getScene()
     const layer: Layer = {
       ...baseLayer(s, 'Line'),
       type: 'line',
@@ -198,13 +199,18 @@ export default function Toolbar() {
     setSizeOpen(false)
   }
 
-  const doExport = async (format: 'png' | 'jpeg' | 'svg') => {
-    setBusy(format)
+  const doExport = async (format: 'png' | 'jpeg' | 'svg', allPages = false) => {
+    setBusy(allPages ? 'all' : format)
     try {
-      const s = editor.getState().scene
-      const blob =
-        format === 'svg' ? await renderSVG(s) : await renderRaster(s, format, exportScale)
-      downloadBlob(blob, `vectorsmith-${s.width}x${s.height}.${format === 'jpeg' ? 'jpg' : format}`)
+      const pages = allPages ? editor.getState().project.pages : [getScene()]
+      for (let i = 0; i < pages.length; i++) {
+        const s = pages[i]
+        const blob =
+          format === 'svg' ? await renderSVG(s) : await renderRaster(s, format, exportScale)
+        const pageName = allPages ? `-${(s.name || `page-${i + 1}`).replace(/[^a-zA-Z0-9ก-๛_-]+/g, '_')}` : ''
+        downloadBlob(blob, `vectorsmith${pageName}-${s.width}x${s.height}.${format === 'jpeg' ? 'jpg' : format}`)
+        if (allPages && i < pages.length - 1) await new Promise((r) => setTimeout(r, 350))
+      }
     } catch (e) {
       alert(`Export failed: ${(e as Error).message}`)
     } finally {
@@ -216,8 +222,8 @@ export default function Toolbar() {
   const saveProject = async () => {
     setBusy('save')
     try {
-      const s = await sceneWithInlinedAssets(editor.getState().scene)
-      downloadBlob(new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' }), 'project.vectorsmith.json')
+      const p = await projectWithInlinedAssets(editor.getState().project)
+      downloadBlob(new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' }), 'project.vectorsmith.json')
     } finally {
       setBusy('')
     }
@@ -225,9 +231,9 @@ export default function Toolbar() {
 
   const openProject = async (file: File) => {
     try {
-      const scene = JSON.parse(await file.text()) as Scene
-      if (typeof scene.width !== 'number' || !Array.isArray(scene.layers)) throw new Error('bad file')
-      editor.getState().replaceScene(scene)
+      const project = migrateProject(JSON.parse(await file.text()))
+      if (!project) throw new Error('bad file')
+      editor.getState().replaceProject(project)
     } catch {
       alert('Not a valid VectorSmith project file.')
     }
@@ -321,8 +327,8 @@ export default function Toolbar() {
         />
         <button
           onClick={() => {
-            if (confirm('Start a new empty canvas? Current work stays in undo history.')) {
-              editor.getState().replaceScene(defaultScene(scene.width, scene.height))
+            if (confirm('Start a new empty project? Current work stays in undo history.')) {
+              editor.getState().replaceProject(defaultProject(scene.width, scene.height))
             }
           }}
         >
@@ -348,6 +354,13 @@ export default function Toolbar() {
               <button disabled={!!busy} onClick={() => doExport('jpeg')}>{busy === 'jpeg' ? '…' : 'JPG'}</button>
               <button disabled={!!busy} onClick={() => doExport('svg')}>{busy === 'svg' ? '…' : 'SVG'}</button>
             </div>
+            {pageCount > 1 && (
+              <div className="popover-row">
+                <button disabled={!!busy} onClick={() => doExport('png', true)}>
+                  {busy === 'all' ? 'Exporting…' : `PNG — all ${pageCount} pages`}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

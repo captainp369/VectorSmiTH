@@ -107,6 +107,62 @@ export interface Scene {
   layers: Layer[]
 }
 
+/** One canvas in a project (a carousel slide, a variant, …). */
+export interface Page extends Scene {
+  id: string
+  name: string
+}
+
+/** The document stored in scene.json. */
+export interface Project {
+  pages: Page[]
+}
+
+function pageId(): string {
+  return Math.random().toString(36).slice(2, 8)
+}
+
+export function defaultProject(width = 1280, height = 720): Project {
+  return { pages: [{ id: pageId(), name: 'Page 1', ...defaultScene(width, height) }] }
+}
+
+/**
+ * Accepts either the current {pages:[...]} format or a legacy single-scene
+ * file and returns a normalized Project (null if it's neither).
+ */
+export function migrateProject(raw: unknown): Project | null {
+  if (!raw || typeof raw !== 'object') return null
+  const asProject = raw as Project
+  if (Array.isArray(asProject.pages)) {
+    const pages = asProject.pages
+      .filter((p) => p && typeof p.width === 'number' && typeof p.height === 'number' && Array.isArray(p.layers))
+      .map((p, i) => ({
+        ...p,
+        id: typeof p.id === 'string' ? p.id : pageId(),
+        name: typeof p.name === 'string' ? p.name : `Page ${i + 1}`,
+        background: typeof p.background === 'string' ? p.background : '#ffffff',
+        layers: p.layers.filter((l) => l && typeof l.id === 'string' && typeof l.type === 'string'),
+      }))
+    return pages.length ? { pages } : null
+  }
+  const asScene = raw as Scene
+  if (typeof asScene.width === 'number' && typeof asScene.height === 'number' && Array.isArray(asScene.layers)) {
+    return {
+      pages: [
+        {
+          id: pageId(),
+          name: 'Page 1',
+          width: asScene.width,
+          height: asScene.height,
+          background: typeof asScene.background === 'string' ? asScene.background : '#ffffff',
+          layers: asScene.layers.filter((l) => l && typeof l.id === 'string' && typeof l.type === 'string'),
+        },
+      ],
+    }
+  }
+  return null
+}
+
 export const CANVAS_PRESETS: { name: string; width: number; height: number }[] = [
   { name: 'YouTube thumbnail', width: 1280, height: 720 },
   { name: 'Instagram post', width: 1080, height: 1080 },

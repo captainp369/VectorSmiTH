@@ -3,6 +3,7 @@ import Toolbar, { addImageLayers } from './components/Toolbar'
 import LayersPanel from './components/LayersPanel'
 import Inspector from './components/Inspector'
 import CanvasStage from './components/CanvasStage'
+import PagesBar from './components/PagesBar'
 import PromptBox from './components/PromptBox'
 import { useEditor } from './store'
 
@@ -37,7 +38,8 @@ export default function App() {
         return
       }
       if (e.key === 'Escape') {
-        editor.select([])
+        if (editor.croppingId) editor.setCropping(null)
+        else editor.select([])
         return
       }
       if (e.key.startsWith('Arrow') && editor.selection.length) {
@@ -77,6 +79,7 @@ export default function App() {
         <CanvasStage />
         <Inspector />
       </div>
+      <PagesBar />
       <PromptBox />
     </div>
   )

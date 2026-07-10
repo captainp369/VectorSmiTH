@@ -1,5 +1,5 @@
 import Konva from 'konva'
-import type { Scene, Layer, TextLayer } from './types'
+import type { Scene, Layer, Project, TextLayer } from './types'
 import { gradientPoints, shapePoints } from './types'
 import { layerConfig } from './konvaConfig'
 
@@ -234,7 +234,14 @@ export function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000)
 }
 
-/** Portable project file: scene with all image sources inlined as data URLs. */
+/** Portable project file: every page's image sources inlined as data URLs. */
+export async function projectWithInlinedAssets(project: Project): Promise<Project> {
+  const pages = []
+  for (const p of project.pages) pages.push({ ...p, ...(await sceneWithInlinedAssets(p)) })
+  return { pages }
+}
+
+/** Scene with all image sources inlined as data URLs. */
 export async function sceneWithInlinedAssets(scene: Scene): Promise<Scene> {
   const layers: Layer[] = []
   for (const l of scene.layers) {

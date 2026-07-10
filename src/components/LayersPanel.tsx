@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useEditor } from '../store'
+import { useEditor, useScene } from '../store'
 import type { Layer } from '../types'
 
 const TYPE_ICONS: Record<Layer['type'], string> = {
@@ -13,7 +13,7 @@ const TYPE_ICONS: Record<Layer['type'], string> = {
 }
 
 export default function LayersPanel() {
-  const scene = useEditor((s) => s.scene)
+  const scene = useScene()
   const selection = useEditor((s) => s.selection)
   const editor = useEditor
   const [renamingId, setRenamingId] = useState<string | null>(null)

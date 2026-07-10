@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { useEditor } from '../store'
+import { useEditor, useScene } from '../store'
 import type { Fill, ImageLayer, Layer } from '../types'
 import { FONT_FAMILIES } from '../types'
 import { useFonts, uploadFontFile } from '../fonts'
@@ -133,8 +133,9 @@ function FillEditor({ fill, onChange, scrubFor }: {
 }
 
 export default function Inspector() {
-  const scene = useEditor((s) => s.scene)
+  const scene = useScene()
   const selection = useEditor((s) => s.selection)
+  const croppingId = useEditor((s) => s.croppingId)
   const customFonts = useFonts((s) => s.custom)
   const editor = useEditor
   const fontInput = useRef<HTMLInputElement>(null)
@@ -194,34 +195,46 @@ export default function Inspector() {
         )}
 
         {layer.type === 'image' && (
-          <>
-            {layer.crop ? (
-              <>
-                <div className="field-row">
-                  <Num label="Crop X" value={layer.crop.x} min={0} onChange={(x) => patch({ crop: { ...layer.crop!, x } } as Partial<Layer>)} {...scrubFor((x) => ({ crop: { ...(layer as ImageLayer).crop!, x: Math.max(0, x) } }) as Partial<Layer>)} />
-                  <Num label="Crop Y" value={layer.crop.y} min={0} onChange={(y) => patch({ crop: { ...layer.crop!, y } } as Partial<Layer>)} {...scrubFor((y) => ({ crop: { ...(layer as ImageLayer).crop!, y: Math.max(0, y) } }) as Partial<Layer>)} />
-                </div>
-                <div className="field-row">
-                  <Num label="Crop W" value={layer.crop.width} min={1} onChange={(width) => patch({ crop: { ...layer.crop!, width } } as Partial<Layer>)} {...scrubFor((width) => ({ crop: { ...(layer as ImageLayer).crop!, width: Math.max(1, width) } }) as Partial<Layer>)} />
-                  <Num label="Crop H" value={layer.crop.height} min={1} onChange={(height) => patch({ crop: { ...layer.crop!, height } } as Partial<Layer>)} {...scrubFor((height) => ({ crop: { ...(layer as ImageLayer).crop!, height: Math.max(1, height) } }) as Partial<Layer>)} />
-                </div>
-                <button onClick={() => patch({ crop: undefined } as Partial<Layer>)}>Remove crop</button>
-              </>
+          <div className="field-row">
+            {croppingId === layer.id ? (
+              <button className="primary" onClick={() => editor.getState().setCropping(null)}>
+                ✓ Done cropping
+              </button>
             ) : (
               <button
                 onClick={async () => {
-                  try {
-                    const img = await loadImage(layer.src)
-                    patch({ crop: { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight } } as Partial<Layer>)
-                  } catch {
-                    alert('Could not load the image to crop.')
+                  if (!layer.crop) {
+                    try {
+                      const img = await loadImage(layer.src)
+                      patch({ crop: { x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight } } as Partial<Layer>)
+                    } catch {
+                      alert('Could not load the image to crop.')
+                      return
+                    }
                   }
+                  editor.getState().select([layer.id])
+                  editor.getState().setCropping(layer.id)
                 }}
               >
                 Crop image
               </button>
             )}
-          </>
+            {layer.crop && (
+              <button
+                onClick={() => {
+                  editor.getState().setCropping(null)
+                  patch({ crop: undefined } as Partial<Layer>)
+                }}
+              >
+                Remove crop
+              </button>
+            )}
+          </div>
+        )}
+        {layer.type === 'image' && croppingId === layer.id && (
+          <div className="empty-hint" style={{ padding: '0 0 4px' }}>
+            Drag the amber handles to crop each side; drag the image to slide it inside the frame. Esc or ✓ to finish.
+          </div>
         )}
 
         {layer.type === 'circle' && (

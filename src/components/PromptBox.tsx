@@ -31,8 +31,9 @@ export default function PromptBox() {
     setStatus('working')
     setError('')
     try {
-      const next = await runPrompt(text, editor.getState().scene, settings)
-      editor.getState().replaceScene(next) // recorded in history — undo restores the pre-AI scene
+      const st = editor.getState()
+      const next = await runPrompt(text, st.project, st.activePage, settings)
+      editor.getState().replaceProject(next) // recorded in history — undo restores the pre-AI project
       setPrompt('')
       setStatus('idle')
     } catch (e) {
