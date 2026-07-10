@@ -1,0 +1,441 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  background: #17181c;
+  color: #e6e6ea;
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: #26272e;
+  border: 1px solid #36373f;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: #30323b;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled) {
+  background: #2f6fe0;
+}
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: #101116;
+  border: 1px solid #36373f;
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 1px solid #3b82f6;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ---------- toolbar ---------- */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #1d1e24;
+  border-bottom: 1px solid #2b2c33;
+  flex-shrink: 0;
+}
+
+.brand {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-right: 6px;
+}
+
+.tb-group {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.tb-spacer {
+  flex: 1;
+}
+
+.popover-anchor {
+  position: relative;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 50;
+  background: #24252c;
+  border: 1px solid #36373f;
+  border-radius: 8px;
+  padding: 10px;
+  min-width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.popover-right {
+  left: auto;
+  right: 0;
+}
+
+.popover-title {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.popover .preset {
+  text-align: left;
+}
+
+.popover-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.popover-row input[type='number'] {
+  width: 70px;
+}
+
+/* ---------- main layout ---------- */
+
+.main-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.panel {
+  width: 230px;
+  background: #1d1e24;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex-shrink: 0;
+}
+
+.layers-panel {
+  border-right: 1px solid #2b2c33;
+}
+
+.inspector {
+  width: 260px;
+  border-left: 1px solid #2b2c33;
+  overflow-y: auto;
+}
+
+.panel-title {
+  font-weight: 700;
+  padding: 10px 12px 6px;
+  color: #9a9aa5;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+}
+
+.empty-hint {
+  padding: 12px;
+  color: #71727c;
+  line-height: 1.5;
+}
+
+/* ---------- layers panel ---------- */
+
+.layers-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  user-select: none;
+}
+
+.layer-row:hover {
+  background: #24252c;
+}
+
+.layer-row.selected {
+  background: #26314a;
+  border-left-color: #3b82f6;
+}
+
+.layer-row.dragging {
+  opacity: 0.4;
+}
+
+.layer-icon {
+  width: 18px;
+  text-align: center;
+  color: #9a9aa5;
+  flex-shrink: 0;
+}
+
+.layer-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layer-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.icon-btn.off {
+  opacity: 0.25;
+}
+
+.icon-btn:hover {
+  opacity: 1;
+  background: none;
+}
+
+.layer-order-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 8px;
+  border-top: 1px solid #2b2c33;
+}
+
+/* ---------- canvas ---------- */
+
+.canvas-area {
+  flex: 1;
+  position: relative;
+  min-width: 0;
+  background: #101116;
+}
+
+.canvas-scroll {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  display: flex;
+  padding: 16px;
+}
+
+.canvas-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  margin: auto;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  background-image: conic-gradient(#2a2b31 25%, #232429 0 50%, #2a2b31 0 75%, #232429 0);
+  background-size: 20px 20px;
+}
+
+.zoom-controls {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #24252ccc;
+  backdrop-filter: blur(4px);
+  border: 1px solid #36373f;
+  border-radius: 8px;
+  padding: 4px 6px;
+}
+
+.zoom-controls span {
+  min-width: 44px;
+  text-align: center;
+  color: #9a9aa5;
+}
+
+/* ---------- inspector ---------- */
+
+.inspector-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.field > span {
+  color: #9a9aa5;
+  font-size: 11px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+}
+
+.field-row {
+  display: flex;
+  gap: 8px;
+}
+
+.color-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.color-field input[type='color'] {
+  width: 34px;
+  height: 28px;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.color-field input[type='text'] {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---------- prompt box ---------- */
+
+.prompt-box {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #1d1e24;
+  border-top: 1px solid #2b2c33;
+  flex-shrink: 0;
+}
+
+.prompt-box textarea {
+  flex: 1;
+  resize: none;
+}
+
+.prompt-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prompt-error {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 12px;
+  right: 12px;
+  background: #3a1d22;
+  border: 1px solid #7a2c38;
+  color: #ffb4be;
+  border-radius: 8px;
+  padding: 8px 12px;
+  z-index: 40;
+}
+
+.prompt-settings {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 12px;
+  width: 340px;
+  background: #24252c;
+  border: 1px solid #36373f;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 45;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.prompt-settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #9a9aa5;
+  font-size: 11px;
+}
+
+.prompt-settings .hint {
+  margin: 0;
+  color: #71727c;
+  line-height: 1.5;
+}
+
+.prompt-settings code {
+  color: #9a9aa5;
+}
+
+@media (max-width: 1000px) {
+  .panel {
+    width: 160px;
+  }
+
+  .inspector {
+    width: 190px;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+  }
+}

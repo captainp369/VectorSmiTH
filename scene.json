@@ -1,0 +1,147 @@
+{
+  "width": 1280,
+  "height": 720,
+  "background": "#0f1220",
+  "layers": [
+    {
+      "id": "bg-grad",
+      "name": "Background gradient",
+      "x": 305.3211009174311,
+      "y": 291.34874459982115,
+      "rotation": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "type": "rect",
+      "width": 1280,
+      "height": 720,
+      "fill": {
+        "kind": "linear-gradient",
+        "from": "#1e1b4b",
+        "to": "#0f1220",
+        "angle": 135
+      },
+      "touched": true
+    },
+    {
+      "id": "accent-circ",
+      "name": "Accent circle",
+      "x": 1050,
+      "y": 180,
+      "rotation": 0,
+      "opacity": 0.9,
+      "visible": true,
+      "locked": false,
+      "type": "circle",
+      "radius": 260,
+      "fill": {
+        "kind": "linear-gradient",
+        "from": "#f59e0b",
+        "to": "#ef4444",
+        "angle": 45
+      }
+    },
+    {
+      "id": "overlay",
+      "name": "Text backdrop",
+      "x": 0,
+      "y": 380,
+      "rotation": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "type": "rect",
+      "width": 1280,
+      "height": 340,
+      "fill": {
+        "kind": "linear-gradient",
+        "from": "rgba(15,18,32,0)",
+        "to": "rgba(15,18,32,0.95)",
+        "angle": 180
+      }
+    },
+    {
+      "id": "headline",
+      "name": "Headline",
+      "x": 207.65586240949224,
+      "y": 116.5,
+      "rotation": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "type": "text",
+      "text": "สร้างกราฟิกด้วย AI",
+      "fontFamily": "Kanit",
+      "fontSize": 110,
+      "fontWeight": "900",
+      "fill": "#ffffff",
+      "align": "left",
+      "lineHeight": 1.1,
+      "width": 1000,
+      "shadow": {
+        "color": "rgba(0,0,0,0.6)",
+        "blur": 24,
+        "offsetX": 0,
+        "offsetY": 6
+      },
+      "touched": true
+    },
+    {
+      "id": "subline",
+      "name": "Subheadline",
+      "x": 66,
+      "y": 570,
+      "rotation": 0,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "type": "text",
+      "text": "EDITABLE LAYERS, NOT PIXELS",
+      "fontFamily": "Bebas Neue",
+      "fontSize": 56,
+      "fontWeight": "normal",
+      "fill": "#fbbf24",
+      "align": "left",
+      "lineHeight": 1.1,
+      "width": 800,
+      "touched": true
+    },
+    {
+      "id": "badge",
+      "name": "Subscribe badge",
+      "x": 1010,
+      "y": 600,
+      "rotation": -3,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "type": "rect",
+      "width": 220,
+      "height": 70,
+      "cornerRadius": 14,
+      "fill": {
+        "kind": "solid",
+        "color": "#ef4444"
+      }
+    },
+    {
+      "id": "badge-text",
+      "name": "Subscribe label",
+      "x": 1010,
+      "y": 614,
+      "rotation": -3,
+      "opacity": 1,
+      "visible": true,
+      "locked": false,
+      "type": "text",
+      "text": "SUBSCRIBE",
+      "fontFamily": "Inter",
+      "fontSize": 34,
+      "fontWeight": "800",
+      "fill": "#ffffff",
+      "align": "center",
+      "lineHeight": 1.1,
+      "width": 220
+    }
+  ]
+}
