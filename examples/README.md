@@ -15,5 +15,8 @@ cp examples/youtube-thumbnail.json scene.json
 | `ig-carousel-3-slides.json` | 3 × 1080×1350 | multi-page carousel with a **continuous band** flowing across all three slides |
 | `ig-post-starter.json` | 1080×1080 | minimal editorial layout: serif headline, star accent, CTA underline |
 
+Previews of each live in [previews/](previews/) and in the main
+[README](../README.md).
+
 They're also handy as few-shot references when prompting the AI — or just ask
 Claude Code to "remix the carousel example in my brand colors".

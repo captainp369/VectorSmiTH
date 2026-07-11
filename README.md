@@ -11,6 +11,11 @@ Think *Remotion, but for static graphics*: the AI's output is a structured
 scene graph (`scene.json`), the UI renders it live, and a rasterized image is
 the last step — never the medium.
 
+<p align="center">
+  <img src="examples/previews/preview-youtube-thumbnail.png" width="600" alt="AI-generated YouTube thumbnail — every layer still editable"><br/>
+  <sub>Generated from a prompt, then opened in the editor — every card, badge, and line of text above is its own draggable layer.</sub>
+</p>
+
 ## The workflow (works with a Claude subscription — no API key)
 
 The same loop as editing video with Claude Code + a timeline tool, but for
@@ -64,6 +69,27 @@ Paste this into Claude Code (or any coding agent) and it will do the rest:
 
 Try it without AI: `cp examples/youtube-thumbnail.json scene.json` and watch
 the canvas. More in [examples/](examples/README.md).
+
+## Examples
+
+<table>
+<tr><td width="55%">
+
+**A 3-slide carousel where the design flows across pages** — one band, same
+layer, shifted a page-width left each slide. `examples/ig-carousel-3-slides.json`
+
+</td><td>
+
+**A minimal editorial post** — starter for social content that isn't a
+thumbnail. `examples/ig-post-starter.json`
+
+</td></tr>
+<tr><td>
+<img src="examples/previews/preview-ig-carousel.png" width="100%" alt="3-slide Instagram carousel with a continuous diagonal band across all slides">
+</td><td>
+<img src="examples/previews/preview-ig-post-starter.png" width="100%" alt="Minimal Instagram post template">
+</td></tr>
+</table>
 
 ## Editor features
 
