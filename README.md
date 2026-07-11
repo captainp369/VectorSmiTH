@@ -12,8 +12,8 @@ scene graph (`scene.json`), the UI renders it live, and a rasterized image is
 the last step — never the medium.
 
 <p align="center">
-  <img src="examples/previews/preview-youtube-thumbnail.png" width="600" alt="AI-generated YouTube thumbnail — every layer still editable"><br/>
-  <sub>Generated from a prompt, then opened in the editor — every card, badge, and line of text above is its own draggable layer.</sub>
+  <img src="examples/previews/screenshot-app-ui.png" width="800" alt="VectorSmiTH editor showing an AI-generated YouTube thumbnail with the layers panel open"><br/>
+  <sub>This is the actual editor — not a mockup. Every card, badge, and line of text in that thumbnail is its own layer in the panel on the left, generated from a prompt and still fully draggable.</sub>
 </p>
 
 ## The workflow (works with a Claude subscription — no API key)
