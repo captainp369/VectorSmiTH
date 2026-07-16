@@ -14,6 +14,19 @@ cp examples/youtube-thumbnail.json scene.json
 | `youtube-thumbnail.json` | 1280×720 | thumbnail anatomy: gradient bg, glow, layered-cards motif, fake terminal, rotated badge |
 | `ig-carousel-3-slides.json` | 3 × 1080×1350 | multi-page carousel with a **continuous band** flowing across all three slides |
 | `ig-post-starter.json` | 1080×1080 | minimal editorial layout: serif headline, star accent, CTA underline |
+| `vox-paper-cutout.json` | 1080×1350 | the [GRAPHIC_PHILOSOPHY](../GRAPHIC_PHILOSOPHY.md) editorial-paper pack: preprocessed photo cutout, SVG halftone + arrow assets, highlighter bar, paper caption strips |
+
+`vox-paper-cutout.json` references image files — copy them into your assets
+folder first:
+
+```bash
+cp examples/media/* assets/
+cp examples/vox-paper-cutout.json scene.json
+```
+
+(The cutout in `examples/media/trillionaire-papercut.png` was made from a
+single ordinary photo: macOS Vision background removal, then the ImageMagick
+posterize / paper-border / offset-shadow recipe from GRAPHIC_PHILOSOPHY §5.2.)
 
 Previews of each live in [previews/](previews/) and in the main
 [README](../README.md).

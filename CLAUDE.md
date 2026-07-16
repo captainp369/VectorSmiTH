@@ -8,6 +8,10 @@ a graphic for the user, edit `scene.json`. Never generate a flat image.
 
 ## How to fulfill design requests
 
+0. **Read `GRAPHIC_PHILOSOPHY.md` first — required.** Style packs, depth &
+   light laws, the SVG-asset technique (glows/glass/3D live in `assets/*.svg`,
+   not in scene layers), ImageMagick preprocessing, and the
+   `assets/ASSET_REQUESTS.md` protocol for photos the user must supply.
 1. Read `scene.json` (current canvas) and `assets/` (available images).
 2. Edit `scene.json`: add/modify/remove layer objects.
 3. Done — the canvas updates live; the user fine-tunes by hand and exports from the UI.

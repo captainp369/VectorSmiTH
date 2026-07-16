@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/icon.svg" width="112" alt="VectorSmiTH icon — a bezier curve being forged on an anvil">
+</p>
+
 # VectorSmiTH
 
 **AI-assisted graphic & thumbnail editor — "Canva via Claude Code."**
@@ -73,6 +77,27 @@ the canvas. More in [examples/](examples/README.md).
 ## Examples
 
 <table>
+<tr><td width="42%">
+
+**Editorial paper-cutout news graphic** — the
+[GRAPHIC_PHILOSOPHY.md](GRAPHIC_PHILOSOPHY.md) showcase. The subject started
+as an ordinary photo: background removed, posterized, given a paper border
+and an offset ink shadow with ImageMagick (§5.2 of the philosophy doc); the
+halftone texture and hand-drawn arrow are AI-authored SVG assets; every
+strip, bar, and line of type is an editable scene layer.
+`examples/vox-paper-cutout.json`
+
+```bash
+cp examples/media/* assets/
+cp examples/vox-paper-cutout.json scene.json
+```
+
+</td><td>
+<img src="examples/previews/preview-vox-paper-cutout.png" width="100%" alt="Vox-style editorial paper-cutout news graphic about the world's first trillionaire">
+</td></tr>
+</table>
+
+<table>
 <tr><td width="55%">
 
 **A 3-slide carousel where the design flows across pages** — one band, same
@@ -121,6 +146,10 @@ thumbnail. `examples/ig-post-starter.json`
 - **Persistence** — autosaves to `scene.json` + localStorage; "Save project"
   downloads a portable JSON with images inlined.
 - **Undo/redo** — ⌘Z / ⇧⌘Z, ⌘D duplicate, Delete removes.
+- **Copy/paste** — ⌘C / ⌘X / ⌘V on layers (works across pages — copy on one
+  page, paste on another at the same spot). Paste also accepts images from
+  your OS clipboard (screenshots land as layers) and plain text (becomes a
+  text layer).
 
 ## The scene graph
 
@@ -129,6 +158,18 @@ list of layer objects (order = z-index). [CLAUDE.md](CLAUDE.md) documents the
 full schema — it doubles as the instruction file that teaches Claude Code how
 to design safely (preserve `touched` layers, reference real assets, layout
 guidance).
+
+## The design philosophy
+
+[GRAPHIC_PHILOSOPHY.md](GRAPHIC_PHILOSOPHY.md) is the other half of the AI
+instructions: it's what stops the AI from producing the default
+photo-plus-bold-text thumbnail every tool makes. It defines **style packs**
+(dark glass tech, sticker pop, editorial paper, neon wire), depth-and-light
+laws (overlap, one light source, rim-light cutouts), the **SVG-asset
+technique** (glows, glass, and textures the schema can't express get authored
+as `assets/*.svg` and placed as image layers), and an **ImageMagick
+preprocessing pipeline** for photos — sticker borders, duotones, baked
+shadows. The paper-cutout example above is that document in action.
 
 ## Contributing
 
