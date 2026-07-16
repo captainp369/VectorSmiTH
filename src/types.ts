@@ -19,6 +19,8 @@ export interface LayerBase {
   locked: boolean
   /** Set when the user manually adjusted this layer; the AI must preserve it. */
   touched?: boolean
+  /** Layers sharing a group id select and move together (⌘G / ⇧⌘G). */
+  group?: string
 }
 
 export interface ImageLayer extends LayerBase {
@@ -220,6 +222,45 @@ export function layerSize(layer: Layer): { w: number; h: number } {
     case 'star':
       return { w: layer.outerRadius * 2, h: layer.outerRadius * 2 }
   }
+}
+
+/**
+ * Axis-aligned bounding box of a layer in canvas coordinates, accounting for
+ * rotation and for center-origin shapes (circle/polygon/star).
+ */
+export function layerBBox(layer: Layer): { x: number; y: number; w: number; h: number } {
+  const { w, h } = layerSize(layer)
+  // Local box relative to the rotation origin (layer.x/y).
+  let lx = 0
+  let ly = 0
+  if (layer.type === 'circle' || layer.type === 'polygon' || layer.type === 'star') {
+    lx = -w / 2
+    ly = -h / 2
+  } else if (layer.type === 'line') {
+    lx = Math.min(...layer.points.filter((_, i) => i % 2 === 0))
+    ly = Math.min(...layer.points.filter((_, i) => i % 2 === 1))
+  }
+  const a = (layer.rotation * Math.PI) / 180
+  const cos = Math.cos(a)
+  const sin = Math.sin(a)
+  let minX = Infinity
+  let minY = Infinity
+  let maxX = -Infinity
+  let maxY = -Infinity
+  for (const [px, py] of [
+    [lx, ly],
+    [lx + w, ly],
+    [lx, ly + h],
+    [lx + w, ly + h],
+  ]) {
+    const rx = layer.x + px * cos - py * sin
+    const ry = layer.y + px * sin + py * cos
+    minX = Math.min(minX, rx)
+    minY = Math.min(minY, ry)
+    maxX = Math.max(maxX, rx)
+    maxY = Math.max(maxY, ry)
+  }
+  return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
 }
 
 /** Vertices of a regular polygon / star, matching Konva's layout (first point up). */

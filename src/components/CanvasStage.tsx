@@ -6,6 +6,7 @@ import { useEditor, useScene } from '../store'
 import type { ImageLayer, Layer, Scene, TextLayer } from '../types'
 import { layerConfig } from '../konvaConfig'
 import { loadImage } from '../export'
+import ContextMenu, { type MenuState } from './ContextMenu'
 
 // Synchronous image cache: a remounted node gets its HTMLImageElement on the
 // first render, so its Konva hit region never flashes empty (use-image would
@@ -210,6 +211,7 @@ export default function CanvasStage() {
   const [fontEpoch, setFontEpoch] = useState(0)
   const [marquee, setMarquee] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null)
   const [guides, setGuides] = useState<Guides>({ v: [], h: [] })
+  const [menu, setMenu] = useState<MenuState | null>(null)
   const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
   const userZoomed = useRef(false)
   const setZoom = (updater: number | ((z: number) => number)) => {
@@ -306,6 +308,8 @@ export default function CanvasStage() {
   const handleSelect = (layer: Layer) => (e: KonvaEventObject<MouseEvent>) => {
     e.cancelBubble = true
     if (e.evt.shiftKey) editor.getState().toggleSelect(layer.id)
+    // Alt-click reaches a single layer inside a group.
+    else if (e.evt.altKey) editor.getState().select([layer.id], { exact: true })
     else if (!selection.includes(layer.id)) editor.getState().select([layer.id])
   }
 
@@ -672,6 +676,16 @@ export default function CanvasStage() {
               if (p) setMarquee({ ...marquee, x2: p.x / zoom, y2: p.y / zoom })
             }}
             onMouseUp={finalizeMarquee}
+            onContextMenu={(e) => {
+              e.evt.preventDefault()
+              const id = e.target.id()
+              if (id && scene.layers.some((l) => l.id === id)) {
+                if (!editor.getState().selection.includes(id)) editor.getState().select([id])
+              } else if (e.target === e.target.getStage() || e.target.name() === 'canvas-bg') {
+                editor.getState().select([])
+              }
+              setMenu({ x: e.evt.clientX, y: e.evt.clientY })
+            }}
           >
             <KLayer>
               <Rect
@@ -749,6 +763,7 @@ export default function CanvasStage() {
           )}
         </div>
       </div>
+      {menu && <ContextMenu menu={menu} onClose={() => setMenu(null)} />}
       <div className="zoom-controls">
         <button onClick={() => setZoom((z) => Math.max(0.05, z / 1.25))}>−</button>
         <span>{Math.round(zoom * 100)}%</span>

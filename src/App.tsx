@@ -33,6 +33,28 @@ export default function App() {
         if (editor.selection.length) editor.duplicateLayers(editor.selection)
         return
       }
+      if (mod && e.key.toLowerCase() === 'a') {
+        e.preventDefault()
+        const scene = getScene()
+        editor.select(scene.layers.filter((l) => l.visible && !l.locked).map((l) => l.id))
+        return
+      }
+      if (mod && e.key.toLowerCase() === 'g') {
+        e.preventDefault()
+        if (e.shiftKey) editor.ungroupLayers(editor.selection)
+        else editor.groupLayers(editor.selection)
+        return
+      }
+      if (mod && (e.key === ']' || e.key === '}')) {
+        e.preventDefault()
+        if (editor.selection.length) editor.reorderLayers(editor.selection, e.shiftKey ? 'front' : 'forward')
+        return
+      }
+      if (mod && (e.key === '[' || e.key === '{')) {
+        e.preventDefault()
+        if (editor.selection.length) editor.reorderLayers(editor.selection, e.shiftKey ? 'back' : 'backward')
+        return
+      }
       if ((e.key === 'Delete' || e.key === 'Backspace') && editor.selection.length) {
         e.preventDefault()
         editor.removeLayers(editor.selection)

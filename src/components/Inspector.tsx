@@ -132,6 +132,51 @@ function FillEditor({ fill, onChange, scrubFor }: {
   )
 }
 
+function ArrangeSection() {
+  const scene = useScene()
+  const selection = useEditor((s) => s.selection)
+  const editor = useEditor
+  if (!selection.length) return null
+  const multi = selection.length > 1
+  const grouped = scene.layers.some((l) => selection.includes(l.id) && l.group)
+  const arrange = (mode: Parameters<ReturnType<typeof editor.getState>['arrangeLayers']>[0]) =>
+    editor.getState().arrangeLayers(mode)
+  return (
+    <div className="arrange">
+      <div className="arrange-title">
+        Align {multi ? 'selection' : 'to canvas'}
+      </div>
+      <div className="arrange-grid">
+        <button title="Align left" onClick={() => arrange('left')}>⇤</button>
+        <button title="Center horizontally" onClick={() => arrange('center-h')}>⇹</button>
+        <button title="Align right" onClick={() => arrange('right')}>⇥</button>
+        <button title="Align top" onClick={() => arrange('top')}>⤒</button>
+        <button title="Center vertically" onClick={() => arrange('center-v')}>⇳</button>
+        <button title="Align bottom" onClick={() => arrange('bottom')}>⤓</button>
+      </div>
+      {selection.length >= 3 && (
+        <div className="arrange-grid two">
+          <button title="Equal horizontal spacing" onClick={() => arrange('distribute-h')}>↔ Space</button>
+          <button title="Equal vertical spacing" onClick={() => arrange('distribute-v')}>↕ Space</button>
+        </div>
+      )}
+      {multi && (
+        <div className="arrange-grid two">
+          <button onClick={() => editor.getState().groupLayers(editor.getState().selection)}>
+            Group ⌘G
+          </button>
+          <button
+            disabled={!grouped}
+            onClick={() => editor.getState().ungroupLayers(editor.getState().selection)}
+          >
+            Ungroup
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Inspector() {
   const scene = useScene()
   const selection = useEditor((s) => s.selection)
@@ -149,6 +194,7 @@ export default function Inspector() {
         <div className="empty-hint">
           {selection.length > 1 ? `${selection.length} layers selected` : 'Select a layer to edit its properties.'}
         </div>
+        <ArrangeSection />
       </div>
     )
   }
@@ -167,6 +213,7 @@ export default function Inspector() {
   return (
     <div className="panel inspector">
       <div className="panel-title">Inspector — {layer.name}</div>
+      <ArrangeSection />
       <div className="inspector-fields">
         <div className="field-row">
           <Num label="X" value={layer.x} onChange={(x) => patch({ x })} {...scrubFor((x) => ({ x }))} />

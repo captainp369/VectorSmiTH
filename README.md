@@ -80,11 +80,14 @@ the canvas. More in [examples/](examples/README.md).
 <tr><td width="42%">
 
 **Editorial paper-cutout news graphic** — the
-[GRAPHIC_PHILOSOPHY.md](GRAPHIC_PHILOSOPHY.md) showcase. The subject started
-as an ordinary photo: background removed, posterized, given a paper border
-and an offset ink shadow with ImageMagick (§5.2 of the philosophy doc); the
-halftone texture and hand-drawn arrow are AI-authored SVG assets; every
-strip, bar, and line of type is an editable scene layer.
+[GRAPHIC_PHILOSOPHY.md](GRAPHIC_PHILOSOPHY.md) showcase, 30 editable layers.
+The subject started as an ordinary news photo: background removed,
+posterized, given a paper border and an offset ink shadow with ImageMagick
+(§5.2 of the philosophy doc). The torn-paper block, rubber stamp (circular
+text and all), paper-money confetti, rocket with its dashed trajectory,
+halftone texture, and hand-drawn arrow are AI-authored SVG assets; the
+ticker, headline, highlighter bar, and caption strips are plain scene layers,
+and the strips come **pre-grouped** so they drag as one.
 `examples/vox-paper-cutout.json`
 
 ```bash
@@ -124,6 +127,13 @@ thumbnail. `examples/ig-post-starter.json`
 - **Direct manipulation** — drag, corner/edge resize handles, rotation,
   multi-select (shift-click or rubber-band drag), snap guides against canvas
   edges/centers and other layers, arrow-key nudging.
+- **Align & distribute** — one click aligns a layer to the canvas or a
+  multi-selection to itself; equal-spacing distribution for 3+ layers.
+- **Groups** — ⌘G groups layers so they select and move as one (⇧⌘G
+  ungroups, alt-click reaches a single layer inside a group). Groups survive
+  in `scene.json`, so the AI can hand you pre-grouped composites.
+- **Right-click menu** — copy/cut/paste, duplicate, delete, z-order
+  (also ⌘] / ⌘[), group/ungroup, crop, lock.
 - **Layers panel** — drag to reorder z-index, show/hide, lock, rename
   (double-click), to-front/back.
 - **Text** — double-click on canvas to edit content; font, size, weight,

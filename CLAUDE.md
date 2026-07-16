@@ -46,7 +46,10 @@ across slides): put the same image layer on consecutive pages, shifting its
 simply appears on the next slide.
 
 All layers share: `id`, `name`, `x`, `y`, `rotation` (deg, clockwise, around
-top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`.
+top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`, optional
+`group` (string — layers with the same group id select and move together in
+the UI; give composite elements like a paper strip + its shadow + its label
+one shared short id).
 
 | type | extra fields |
 |------|--------------|

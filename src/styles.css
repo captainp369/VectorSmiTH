@@ -98,6 +98,82 @@ textarea:focus {
   flex: 1;
 }
 
+.context-menu {
+  position: fixed;
+  z-index: 200;
+  background: #24252c;
+  border: 1px solid #36373f;
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 190px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
+.context-menu button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.context-menu button:hover:not(:disabled) {
+  background: #34363f;
+}
+
+.context-menu kbd {
+  font-family: inherit;
+  font-size: 11px;
+  color: #8b8d98;
+}
+
+.context-menu hr {
+  border: none;
+  border-top: 1px solid #36373f;
+  margin: 4px 6px;
+}
+
+.arrange {
+  padding: 10px 12px;
+  border-bottom: 1px solid #26272e;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.arrange-title {
+  font-size: 11px;
+  color: #8b8d98;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.arrange-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.arrange-grid.two {
+  grid-template-columns: 1fr 1fr;
+}
+
+.arrange-grid button {
+  padding: 4px 0;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.arrange-grid.two button {
+  font-size: 12px;
+}
+
 .popover-anchor {
   position: relative;
 }

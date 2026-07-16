@@ -72,12 +72,17 @@ export async function startSync() {
   // disk -> UI (Claude Code edits scene.json)
   try {
     const events = new EventSource('/api/scene/events')
-    events.onmessage = async () => {
+    const pullFromDisk = async () => {
       const project = await fetchProject()
       if (!project) return
       if (JSON.stringify(project) === JSON.stringify(useEditor.getState().project)) return
       applyExternal(project)
     }
+    events.onmessage = pullFromDisk
+    // File events emitted while the stream is (re)connecting are lost — e.g.
+    // right after a dev-server restart. Re-sync from disk on every (re)open
+    // so the file stays the source of truth.
+    events.onopen = pullFromDisk
   } catch {
     /* no dev bridge (static build) */
   }

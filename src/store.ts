@@ -2,6 +2,8 @@ import { create } from 'zustand'
 import { nanoid } from 'nanoid'
 import type { Layer, Page, Project, Scene } from './types'
 import { defaultProject } from './types'
+import type { ArrangeMode, ReorderDir } from './arrange'
+import { arrangeDeltas, reorderedLayers } from './arrange'
 
 const HISTORY_LIMIT = 60
 
@@ -33,7 +35,8 @@ export interface EditorState {
   past: Project[]
   future: Project[]
 
-  select: (ids: string[]) => void
+  /** Select layers; grouped layers pull in their whole group unless exact. */
+  select: (ids: string[], opts?: { exact?: boolean }) => void
   toggleSelect: (id: string) => void
   setEditingText: (id: string | null) => void
   setCropping: (id: string | null) => void
@@ -57,6 +60,14 @@ export interface EditorState {
   pasteLayers: () => void
   /** Paste from OS-clipboard text; true if it was a layer payload. */
   pasteExternal: (text: string) => boolean
+  /** Give the selected layers a shared group id (≥2 layers). */
+  groupLayers: (ids: string[]) => void
+  /** Remove the group id from the given layers. */
+  ungroupLayers: (ids: string[]) => void
+  /** Align or distribute the selected layers (see arrange.ts). */
+  arrangeLayers: (mode: ArrangeMode) => void
+  /** Move the selected layers in the z-stack. */
+  reorderLayers: (ids: string[], dir: ReorderDir) => void
   moveLayer: (id: string, toIndex: number) => void
 
   setActivePage: (index: number) => void
@@ -74,6 +85,27 @@ function mutatePage(project: Project, index: number, mutate: (page: Page) => Sce
   }
 }
 
+/** Expand ids so any grouped layer brings its whole group along. */
+function expandGroups(layers: Layer[], ids: string[]): string[] {
+  const groups = new Set(
+    layers.filter((l) => ids.includes(l.id) && l.group).map((l) => l.group as string),
+  )
+  if (!groups.size) return ids
+  const out = new Set(ids)
+  for (const l of layers) if (l.group && groups.has(l.group)) out.add(l.id)
+  return [...out]
+}
+
+/** Fresh group ids for copies, so a duplicated group is its own group. */
+function remapGroups(layers: Layer[]): Layer[] {
+  const map = new Map<string, string>()
+  return layers.map((l) => {
+    if (!l.group) return l
+    if (!map.has(l.group)) map.set(l.group, nanoid(6))
+    return { ...l, group: map.get(l.group) }
+  })
+}
+
 export const useEditor = create<EditorState>((set, get) => ({
   project: defaultProject(),
   activePage: 0,
@@ -84,13 +116,22 @@ export const useEditor = create<EditorState>((set, get) => ({
   past: [],
   future: [],
 
-  select: (ids) => set({ selection: ids }),
-  toggleSelect: (id) =>
+  select: (ids, opts) =>
     set((s) => ({
-      selection: s.selection.includes(id)
-        ? s.selection.filter((x) => x !== id)
-        : [...s.selection, id],
+      selection: opts?.exact
+        ? ids
+        : expandGroups(s.project.pages[s.activePage]?.layers ?? [], ids),
     })),
+  toggleSelect: (id) =>
+    set((s) => {
+      const layers = s.project.pages[s.activePage]?.layers ?? []
+      const grp = expandGroups(layers, [id])
+      return {
+        selection: s.selection.includes(id)
+          ? s.selection.filter((x) => !grp.includes(x))
+          : [...s.selection, ...grp.filter((g) => !s.selection.includes(g))],
+      }
+    }),
   setEditingText: (id) => set({ editingTextId: id }),
   setCropping: (id) => set({ croppingId: id }),
 
@@ -156,6 +197,7 @@ export const useEditor = create<EditorState>((set, get) => ({
     const newIds: string[] = []
     get().commit((scene) => {
       const layers = [...scene.layers]
+      const copies: Layer[] = []
       for (const id of ids) {
         const idx = layers.findIndex((l) => l.id === id)
         if (idx === -1) continue
@@ -168,9 +210,14 @@ export const useEditor = create<EditorState>((set, get) => ({
           touched: true,
         }
         newIds.push(copy.id)
+        copies.push(copy)
         layers.splice(idx + 1, 0, copy)
       }
-      return { ...scene, layers }
+      const remapped = remapGroups(copies)
+      return {
+        ...scene,
+        layers: layers.map((l) => remapped.find((r) => r.id === l.id) ?? l),
+      }
     })
     set({ selection: newIds })
   },
@@ -204,17 +251,19 @@ export const useEditor = create<EditorState>((set, get) => ({
       ...scene,
       layers: [
         ...scene.layers,
-        ...clip.layers.map((l) => {
-          const copy: Layer = {
-            ...structuredClone(l),
-            id: nanoid(8),
-            x: l.x + offset,
-            y: l.y + offset,
-            touched: true,
-          }
-          newIds.push(copy.id)
-          return copy
-        }),
+        ...remapGroups(
+          clip.layers.map((l) => {
+            const copy: Layer = {
+              ...structuredClone(l),
+              id: nanoid(8),
+              x: l.x + offset,
+              y: l.y + offset,
+              touched: true,
+            }
+            newIds.push(copy.id)
+            return copy
+          }),
+        ),
       ],
     }))
     set({ selection: newIds, croppingId: null })
@@ -238,6 +287,52 @@ export const useEditor = create<EditorState>((set, get) => ({
     get().pasteLayers()
     return true
   },
+
+  groupLayers: (ids) => {
+    if (ids.length < 2) return
+    const group = nanoid(6)
+    get().commit((scene) => ({
+      ...scene,
+      layers: scene.layers.map((l) =>
+        ids.includes(l.id) ? ({ ...l, group, touched: true } as Layer) : l,
+      ),
+    }))
+  },
+
+  ungroupLayers: (ids) =>
+    get().commit((scene) => ({
+      ...scene,
+      layers: scene.layers.map((l) => {
+        if (!ids.includes(l.id) || !l.group) return l
+        const { group: _drop, ...rest } = l
+        return { ...rest, touched: true } as Layer
+      }),
+    })),
+
+  arrangeLayers: (mode) => {
+    const s = get()
+    const scene = s.project.pages[s.activePage]
+    const deltas = arrangeDeltas(scene, s.selection, mode)
+    if (!deltas.size) return
+    s.commit((page) => ({
+      ...page,
+      layers: page.layers.map((l) => {
+        const d = deltas.get(l.id)
+        return d ? ({ ...l, x: l.x + d.dx, y: l.y + d.dy, touched: true } as Layer) : l
+      }),
+    }))
+  },
+
+  reorderLayers: (ids, dir) =>
+    get().commit((scene) => {
+      const layers = reorderedLayers(scene.layers, ids, dir)
+      return layers === scene.layers
+        ? scene
+        : {
+            ...scene,
+            layers: layers.map((l) => (ids.includes(l.id) ? ({ ...l, touched: true } as Layer) : l)),
+          }
+    }),
 
   moveLayer: (id, toIndex) =>
     get().commit((scene) => {
