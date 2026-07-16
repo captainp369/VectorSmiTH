@@ -49,7 +49,12 @@ All layers share: `id`, `name`, `x`, `y`, `rotation` (deg, clockwise, around
 top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`, optional
 `group` (string — layers with the same group id select and move together in
 the UI; give composite elements like a paper strip + its shadow + its label
-one shared short id).
+one shared short id), optional `blend` (`"multiply"`, `"screen"`,
+`"overlay"`, `"darken"`, `"lighten"`, `"soft-light"`, `"hard-light"`,
+`"color-dodge"`, `"color-burn"`, `"difference"`, `"exclusion"`,
+`"luminosity"` — how the layer combines with layers below; omit for normal.
+Classic uses: a paper/grain texture image at low opacity with
+`"blend": "multiply"` over everything, or a glow with `"screen"`).
 
 | type | extra fields |
 |------|--------------|

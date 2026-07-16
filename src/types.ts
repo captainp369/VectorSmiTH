@@ -8,6 +8,24 @@ export type Fill =
   | { kind: 'solid'; color: string }
   | { kind: 'linear-gradient'; from: string; to: string; angle: number }
 
+/** Same names in canvas globalCompositeOperation and CSS mix-blend-mode. */
+export const BLEND_MODES = [
+  'normal',
+  'multiply',
+  'screen',
+  'overlay',
+  'darken',
+  'lighten',
+  'soft-light',
+  'hard-light',
+  'color-dodge',
+  'color-burn',
+  'difference',
+  'exclusion',
+  'luminosity',
+] as const
+export type BlendMode = (typeof BLEND_MODES)[number]
+
 export interface LayerBase {
   id: string
   name: string
@@ -21,6 +39,8 @@ export interface LayerBase {
   touched?: boolean
   /** Layers sharing a group id select and move together (⌘G / ⇧⌘G). */
   group?: string
+  /** How this layer's pixels combine with the layers below (default: normal). */
+  blend?: BlendMode
 }
 
 export interface ImageLayer extends LayerBase {

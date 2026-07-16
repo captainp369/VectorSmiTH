@@ -442,6 +442,13 @@ textarea:focus {
   min-width: 0;
 }
 
+.color-field .eyedrop {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  font-size: 15px;
+  line-height: 1;
+}
+
 /* ---------- pages bar ---------- */
 
 .pages-bar {

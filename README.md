@@ -80,15 +80,16 @@ the canvas. More in [examples/](examples/README.md).
 <tr><td width="42%">
 
 **Editorial paper-cutout news graphic** — the
-[GRAPHIC_PHILOSOPHY.md](GRAPHIC_PHILOSOPHY.md) showcase, 30 editable layers.
+[GRAPHIC_PHILOSOPHY.md](GRAPHIC_PHILOSOPHY.md) showcase, 63 editable layers.
 The subject started as an ordinary news photo: background removed,
 posterized, given a paper border and an offset ink shadow with ImageMagick
-(§5.2 of the philosophy doc). The torn-paper block, rubber stamp (circular
-text and all), paper-money confetti, rocket with its dashed trajectory,
-halftone texture, and hand-drawn arrow are AI-authored SVG assets; the
-ticker, headline, highlighter bar, and caption strips are plain scene layers,
-and the strips come **pre-grouped** so they drag as one.
-`examples/vox-paper-cutout.json`
+(§5.2 of the philosophy doc). **TRILLIONAIRE is ransom-note lettering** —
+each character is its own tilted paper piece (shadow + paper + glyph,
+grouped, sized from real font metrics), so you can drag single letters
+around. The torn-paper block, rubber stamp (circular text and all),
+paper-money confetti, rocket with its dashed trajectory, halftone texture,
+and hand-drawn arrow are AI-authored SVG assets; ticker and caption strips
+come pre-grouped too. `examples/vox-paper-cutout.json`
 
 ```bash
 cp examples/media/* assets/
@@ -149,6 +150,10 @@ thumbnail. `examples/ig-post-starter.json`
   page-width left each slide — the AI knows the trick.
 - **Inspector** — every numeric field is scrubbable: drag its label
   left/right to dial the value in.
+- **Blend modes** — multiply/screen/overlay and friends per layer; carried
+  through PNG, JPG, *and* SVG export.
+- **Eyedropper** — every color field has a ⌖ button that samples any pixel
+  on screen (even outside the browser) via the native EyeDropper API.
 - **Assets** — drag & drop images onto the canvas; files land in `assets/`
   so the AI can reference them by path.
 - **Export** — PNG / JPG / SVG at exact canvas dimensions (1×–3×), rendered

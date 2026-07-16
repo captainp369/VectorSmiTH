@@ -1,9 +1,15 @@
 import { useRef } from 'react'
 import { useEditor, useScene } from '../store'
-import type { Fill, ImageLayer, Layer } from '../types'
-import { FONT_FAMILIES } from '../types'
+import type { BlendMode, Fill, ImageLayer, Layer } from '../types'
+import { BLEND_MODES, FONT_FAMILIES } from '../types'
 import { useFonts, uploadFontFile } from '../fonts'
 import { loadImage } from '../export'
+
+declare global {
+  interface Window {
+    EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> }
+  }
+}
 
 interface ScrubProps {
   onScrubStart?: () => void
@@ -81,6 +87,24 @@ function ColorField({ label, value, onChange }: { label: string; value: string; 
       <span className="color-field">
         <input type="color" value={isHex ? value : '#000000'} onChange={(e) => onChange(e.target.value)} />
         <input type="text" value={value} onChange={(e) => onChange(e.target.value)} />
+        {window.EyeDropper && (
+          <button
+            type="button"
+            className="eyedrop"
+            title="Pick a color from anywhere on screen"
+            onClick={async (e) => {
+              e.preventDefault()
+              try {
+                const r = await new window.EyeDropper!().open()
+                onChange(r.sRGBHex)
+              } catch {
+                /* picker cancelled */
+              }
+            }}
+          >
+            ⌖
+          </button>
+        )}
       </span>
     </label>
   )
@@ -230,6 +254,19 @@ export default function Inspector() {
             {...scrubFor((o) => ({ opacity: Math.min(1, Math.max(0, o)) }))}
           />
         </div>
+        <label className="field">
+          <span>Blend mode</span>
+          <select
+            value={layer.blend ?? 'normal'}
+            onChange={(e) =>
+              patch({ blend: e.target.value === 'normal' ? undefined : (e.target.value as BlendMode) })
+            }
+          >
+            {BLEND_MODES.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </label>
 
         {(layer.type === 'image' || layer.type === 'rect') && (
           <div className="field-row">

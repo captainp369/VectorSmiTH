@@ -26,6 +26,9 @@ export function layerConfig(layer: Layer): { cls: string; config: Record<string,
     rotation: layer.rotation,
     opacity: layer.opacity,
     visible: layer.visible,
+    ...(layer.blend && layer.blend !== 'normal'
+      ? { globalCompositeOperation: layer.blend }
+      : {}),
   }
 
   switch (layer.type) {

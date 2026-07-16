@@ -104,7 +104,9 @@ export async function renderSVG(scene: Scene): Promise<Blob> {
   for (const layer of scene.layers) {
     if (!layer.visible) continue
     const tf = `transform="translate(${layer.x} ${layer.y}) rotate(${layer.rotation})"`
-    const op = layer.opacity < 1 ? ` opacity="${layer.opacity}"` : ''
+    const op =
+      (layer.opacity < 1 ? ` opacity="${layer.opacity}"` : '') +
+      (layer.blend && layer.blend !== 'normal' ? ` style="mix-blend-mode:${layer.blend}"` : '')
 
     switch (layer.type) {
       case 'image': {
