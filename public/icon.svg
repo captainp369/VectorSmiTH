@@ -1,0 +1,50 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="vs-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#111a2e"/>
+      <stop offset="100%" stop-color="#0b0f1a"/>
+    </linearGradient>
+    <linearGradient id="vs-curve" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="104" fill="url(#vs-bg)"/>
+
+  <!-- bezier curve being forged, with pen-tool nodes -->
+  <path d="M118 178 C 200 84, 312 84, 394 178" fill="none"
+        stroke="url(#vs-curve)" stroke-width="22" stroke-linecap="round"/>
+  <line x1="118" y1="178" x2="166" y2="122" stroke="#94a3b8" stroke-width="7"/>
+  <line x1="394" y1="178" x2="346" y2="122" stroke="#94a3b8" stroke-width="7"/>
+  <circle cx="166" cy="122" r="13" fill="#94a3b8"/>
+  <circle cx="346" cy="122" r="13" fill="#94a3b8"/>
+  <rect x="98" y="158" width="40" height="40" rx="8" fill="#f5f0e6"/>
+  <rect x="374" y="158" width="40" height="40" rx="8" fill="#f5f0e6"/>
+
+  <!-- anvil -->
+  <path d="M64 254
+           C 96 240, 122 234, 148 232
+           L 428 232
+           Q 440 232 440 244
+           L 440 296
+           Q 440 308 428 308
+           L 352 308
+           L 338 348
+           L 366 376
+           L 404 394
+           Q 420 402 420 418
+           L 420 424
+           Q 420 438 406 438
+           L 138 438
+           Q 124 438 124 424
+           L 124 418
+           Q 124 402 140 394
+           L 178 376
+           L 206 348
+           L 192 308
+           L 172 306
+           C 138 302, 96 284, 64 254
+           Z"
+        fill="#f5f0e6"/>
+</svg>
