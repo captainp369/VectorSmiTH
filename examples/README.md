@@ -14,7 +14,7 @@ cp examples/youtube-thumbnail.json scene.json
 | `youtube-thumbnail.json` | 1280×720 | thumbnail anatomy: gradient bg, glow, layered-cards motif, fake terminal, rotated badge |
 | `ig-carousel-3-slides.json` | 3 × 1080×1350 | multi-page carousel with a **continuous band** flowing across all three slides |
 | `ig-post-starter.json` | 1080×1080 | minimal editorial layout: serif headline, star accent, CTA underline |
-| `vox-paper-cutout.json` | 1080×1350 | the [GRAPHIC_PHILOSOPHY](../GRAPHIC_PHILOSOPHY.md) editorial-paper pack, 30 layers: preprocessed photo cutout, torn-paper block, stock ticker, rubber stamp with circular text, paper-money confetti, rocket with dashed trajectory, highlighter bar, grouped caption strips |
+| `vox-paper-cutout.json` | 1080×1350 | the [GRAPHIC_PHILOSOPHY](../GRAPHIC_PHILOSOPHY.md) editorial-paper pack, 63 layers: preprocessed photo cutout, ransom-note headline (each letter its own grouped paper piece), torn-paper block, stock ticker, rubber stamp with circular text, paper-money confetti, rocket with dashed trajectory, grouped caption strips |
 
 `vox-paper-cutout.json` references image files — copy them into your assets
 folder first:
