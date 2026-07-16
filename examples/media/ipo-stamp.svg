@@ -1,0 +1,13 @@
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <path id="stamp-arc" d="M150,150 m-92,0 a92,92 0 1,1 184,0 a92,92 0 1,1 -184,0" fill="none"/>
+  </defs>
+  <g opacity="0.92">
+    <circle cx="150" cy="150" r="132" fill="none" stroke="#D93025" stroke-width="9"/>
+    <circle cx="150" cy="150" r="112" fill="none" stroke="#D93025" stroke-width="3"/>
+    <text font-family="Inter" font-size="21" font-weight="800" fill="#D93025" letter-spacing="5">
+      <textPath href="#stamp-arc" textLength="574" lengthAdjust="spacingAndGlyphs">· NYSE · JUNE 12 2026 · SPACEX · PUBLIC</textPath>
+    </text>
+    <text x="150" y="178" font-family="Archivo Black" font-size="76" fill="#D93025" text-anchor="middle">IPO</text>
+  </g>
+</svg>

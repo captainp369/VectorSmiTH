@@ -1,0 +1,15 @@
+<svg width="500" height="420" viewBox="0 0 500 420" xmlns="http://www.w3.org/2000/svg">
+  <!-- dashed looping trajectory -->
+  <path d="M28 396 C 150 366, 78 262, 172 250 C 274 238, 244 352, 160 330 C 84 310, 170 196, 268 156 C 314 137, 344 122, 372 104"
+        fill="none" stroke="#1B1A17" stroke-width="7" stroke-linecap="round"
+        stroke-dasharray="2 22"/>
+  <!-- paper rocket at the end of the path -->
+  <g transform="translate(400,78) rotate(38)">
+    <path d="M0 44 C 10 58 8 72 0 88 C -8 72 -10 58 0 44 Z" fill="#F97316"/>
+    <path d="M-16 6 L -36 44 L -12 32 Z" fill="#FFD437" stroke="#1B1A17" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M16 6 L 36 44 L 12 32 Z" fill="#FFD437" stroke="#1B1A17" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M0 -64 C 20 -34 20 12 0 40 C -20 12 -20 -34 0 -64 Z"
+          fill="#FFFDF7" stroke="#1B1A17" stroke-width="6" stroke-linejoin="round"/>
+    <circle cx="0" cy="-16" r="10" fill="#9BC7D4" stroke="#1B1A17" stroke-width="5"/>
+  </g>
+</svg>
