@@ -60,8 +60,10 @@ export interface EditorState {
   pasteLayers: () => void
   /** Paste from OS-clipboard text; true if it was a layer payload. */
   pasteExternal: (text: string) => boolean
-  /** Give the selected layers a shared group id (≥2 layers). */
-  groupLayers: (ids: string[]) => void
+  /** Give the selected layers a shared group id (≥2 layers), with a display name. */
+  groupLayers: (ids: string[], name?: string) => void
+  /** Rename an existing group. */
+  renameGroup: (groupId: string, name: string) => void
   /** Remove the group id from the given layers. */
   ungroupLayers: (ids: string[]) => void
   /** Align or distribute the selected layers (see arrange.ts). */
@@ -97,13 +99,34 @@ function expandGroups(layers: Layer[], ids: string[]): string[] {
 }
 
 /** Fresh group ids for copies, so a duplicated group is its own group. */
-function remapGroups(layers: Layer[]): Layer[] {
+function remapGroups(layers: Layer[]): { layers: Layer[]; map: Map<string, string> } {
   const map = new Map<string, string>()
-  return layers.map((l) => {
+  const out = layers.map((l) => {
     if (!l.group) return l
     if (!map.has(l.group)) map.set(l.group, nanoid(6))
     return { ...l, group: map.get(l.group) }
   })
+  return { layers: out, map }
+}
+
+/** Carry group display names over to remapped (copied) group ids. */
+function carryGroupNames(
+  groups: Record<string, string> | undefined,
+  map: Map<string, string>,
+): Record<string, string> | undefined {
+  if (!map.size) return groups
+  const next = { ...(groups ?? {}) }
+  for (const [from, to] of map) next[to] = groups?.[from] ?? from
+  return next
+}
+
+/** Drop names for group ids no layer uses any more. */
+function pruneGroups(scene: Scene): Record<string, string> | undefined {
+  if (!scene.groups) return undefined
+  const used = new Set(scene.layers.map((l) => l.group).filter(Boolean) as string[])
+  const next: Record<string, string> = {}
+  for (const [id, name] of Object.entries(scene.groups)) if (used.has(id)) next[id] = name
+  return Object.keys(next).length ? next : undefined
 }
 
 export const useEditor = create<EditorState>((set, get) => ({
@@ -183,10 +206,10 @@ export const useEditor = create<EditorState>((set, get) => ({
     }),
 
   removeLayers: (ids) => {
-    get().commit((scene) => ({
-      ...scene,
-      layers: scene.layers.filter((l) => !ids.includes(l.id)),
-    }))
+    get().commit((scene) => {
+      const next = { ...scene, layers: scene.layers.filter((l) => !ids.includes(l.id)) }
+      return { ...next, groups: pruneGroups(next) }
+    })
     set((s) => ({
       selection: s.selection.filter((id) => !ids.includes(id)),
       croppingId: s.croppingId && ids.includes(s.croppingId) ? null : s.croppingId,
@@ -216,7 +239,8 @@ export const useEditor = create<EditorState>((set, get) => ({
       const remapped = remapGroups(copies)
       return {
         ...scene,
-        layers: layers.map((l) => remapped.find((r) => r.id === l.id) ?? l),
+        groups: carryGroupNames(scene.groups, remapped.map),
+        layers: layers.map((l) => remapped.layers.find((r) => r.id === l.id) ?? l),
       }
     })
     set({ selection: newIds })
@@ -247,25 +271,26 @@ export const useEditor = create<EditorState>((set, get) => ({
     }
     const offset = 24 * pasteSeq
     const newIds: string[] = []
-    get().commit((scene) => ({
-      ...scene,
-      layers: [
-        ...scene.layers,
-        ...remapGroups(
-          clip.layers.map((l) => {
-            const copy: Layer = {
-              ...structuredClone(l),
-              id: nanoid(8),
-              x: l.x + offset,
-              y: l.y + offset,
-              touched: true,
-            }
-            newIds.push(copy.id)
-            return copy
-          }),
-        ),
-      ],
-    }))
+    get().commit((scene) => {
+      const remapped = remapGroups(
+        clip.layers.map((l) => {
+          const copy: Layer = {
+            ...structuredClone(l),
+            id: nanoid(8),
+            x: l.x + offset,
+            y: l.y + offset,
+            touched: true,
+          }
+          newIds.push(copy.id)
+          return copy
+        }),
+      )
+      return {
+        ...scene,
+        groups: carryGroupNames(scene.groups, remapped.map),
+        layers: [...scene.layers, ...remapped.layers],
+      }
+    })
     set({ selection: newIds, croppingId: null })
   },
 
@@ -288,26 +313,45 @@ export const useEditor = create<EditorState>((set, get) => ({
     return true
   },
 
-  groupLayers: (ids) => {
+  groupLayers: (ids, name) => {
     if (ids.length < 2) return
     const group = nanoid(6)
-    get().commit((scene) => ({
-      ...scene,
-      layers: scene.layers.map((l) =>
-        ids.includes(l.id) ? ({ ...l, group, touched: true } as Layer) : l,
-      ),
-    }))
+    get().commit((scene) => {
+      const used = new Set(Object.values(scene.groups ?? {}))
+      let label = name?.trim() || ''
+      if (!label) {
+        let n = 1
+        while (used.has(`Group ${n}`)) n++
+        label = `Group ${n}`
+      }
+      return {
+        ...scene,
+        groups: { ...(scene.groups ?? {}), [group]: label },
+        layers: scene.layers.map((l) =>
+          ids.includes(l.id) ? ({ ...l, group, touched: true } as Layer) : l,
+        ),
+      }
+    })
   },
 
-  ungroupLayers: (ids) =>
+  renameGroup: (groupId, name) =>
     get().commit((scene) => ({
       ...scene,
-      layers: scene.layers.map((l) => {
-        if (!ids.includes(l.id) || !l.group) return l
-        const { group: _drop, ...rest } = l
-        return { ...rest, touched: true } as Layer
-      }),
+      groups: { ...(scene.groups ?? {}), [groupId]: name.trim() || groupId },
     })),
+
+  ungroupLayers: (ids) =>
+    get().commit((scene) => {
+      const next = {
+        ...scene,
+        layers: scene.layers.map((l) => {
+          if (!ids.includes(l.id) || !l.group) return l
+          const { group: _drop, ...rest } = l
+          return { ...rest, touched: true } as Layer
+        }),
+      }
+      return { ...next, groups: pruneGroups(next) }
+    }),
 
   arrangeLayers: (mode) => {
     const s = get()

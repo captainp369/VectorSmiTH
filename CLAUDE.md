@@ -34,6 +34,7 @@ multiple pages = carousel slides / variants). Legacy single-scene files
       "id": "abc123", "name": "Page 1",
       "width": 1280, "height": 720,      // canvas px
       "background": "#ffffff",
+      "groups": { "hero": "Hero card" },   // optional: group id → display name
       "layers": [ /* index 0 = bottom of z-stack */ ]
     }
   ]
@@ -47,14 +48,22 @@ simply appears on the next slide.
 
 All layers share: `id`, `name`, `x`, `y`, `rotation` (deg, clockwise, around
 top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`, optional
-`group` (string — layers with the same group id select and move together in
-the UI; give composite elements like a paper strip + its shadow + its label
-one shared short id), optional `blend` (`"multiply"`, `"screen"`,
-`"overlay"`, `"darken"`, `"lighten"`, `"soft-light"`, `"hard-light"`,
-`"color-dodge"`, `"color-burn"`, `"difference"`, `"exclusion"`,
-`"luminosity"` — how the layer combines with layers below; omit for normal.
-Classic uses: a paper/grain texture image at low opacity with
-`"blend": "multiply"` over everything, or a glow with `"screen"`).
+`group`, and optional `blend`.
+
+**`group`** (string) — layers with the same group id select and move together
+in the UI. **Group generously**: anything the user thinks of as one thing (a
+card and its label, a strip + its shadow + its text, an icon and its caption)
+should share a group id — this is what makes manual editing fast. Give groups
+readable names via the page-level `groups` map (`"groups": {"cap1": "Caption
+strip"}`, id → name); a group id with no entry displays as-is, so a readable
+id like `"group": "ticker"` works too.
+
+**`blend`** — `"multiply"`, `"screen"`, `"overlay"`, `"darken"`, `"lighten"`,
+`"soft-light"`, `"hard-light"`, `"color-dodge"`, `"color-burn"`,
+`"difference"`, `"exclusion"`, `"luminosity"`: how the layer combines with
+layers below; omit for normal. Classic uses: a paper/grain texture image at
+low opacity with `"blend": "multiply"` over everything, or a glow with
+`"screen"`.
 
 | type | extra fields |
 |------|--------------|

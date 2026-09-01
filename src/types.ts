@@ -127,6 +127,12 @@ export interface Scene {
   height: number
   background: string
   layers: Layer[]
+  /**
+   * Display names for group ids used by layers (`{"g1": "Ticker"}`).
+   * Optional: a group id with no entry is shown as-is, so writing a
+   * readable id like `"group": "ticker"` is enough.
+   */
+  groups?: Record<string, string>
 }
 
 /** One canvas in a project (a carousel slide, a variant, …). */
@@ -163,6 +169,7 @@ export function migrateProject(raw: unknown): Project | null {
         id: typeof p.id === 'string' ? p.id : pageId(),
         name: typeof p.name === 'string' ? p.name : `Page ${i + 1}`,
         background: typeof p.background === 'string' ? p.background : '#ffffff',
+        ...(p.groups && typeof p.groups === 'object' ? { groups: p.groups } : {}),
         layers: p.layers.filter((l) => l && typeof l.id === 'string' && typeof l.type === 'string'),
       }))
     return pages.length ? { pages } : null
@@ -177,6 +184,7 @@ export function migrateProject(raw: unknown): Project | null {
           width: asScene.width,
           height: asScene.height,
           background: typeof asScene.background === 'string' ? asScene.background : '#ffffff',
+          ...(asScene.groups && typeof asScene.groups === 'object' ? { groups: asScene.groups } : {}),
           layers: asScene.layers.filter((l) => l && typeof l.id === 'string' && typeof l.type === 'string'),
         },
       ],
@@ -242,6 +250,11 @@ export function layerSize(layer: Layer): { w: number; h: number } {
     case 'star':
       return { w: layer.outerRadius * 2, h: layer.outerRadius * 2 }
   }
+}
+
+/** Human-readable name for a group id (falls back to the id itself). */
+export function groupLabel(scene: Scene, groupId: string): string {
+  return scene.groups?.[groupId] || groupId
 }
 
 /**

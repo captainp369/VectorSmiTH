@@ -307,7 +307,7 @@ export default function CanvasStage() {
 
   const handleSelect = (layer: Layer) => (e: KonvaEventObject<MouseEvent>) => {
     e.cancelBubble = true
-    if (e.evt.shiftKey) editor.getState().toggleSelect(layer.id)
+    if (e.evt.shiftKey || e.evt.metaKey || e.evt.ctrlKey) editor.getState().toggleSelect(layer.id)
     // Alt-click reaches a single layer inside a group.
     else if (e.evt.altKey) editor.getState().select([layer.id], { exact: true })
     else if (!selection.includes(layer.id)) editor.getState().select([layer.id])

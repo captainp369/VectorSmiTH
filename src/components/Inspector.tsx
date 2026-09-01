@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { useEditor, useScene } from '../store'
 import type { BlendMode, Fill, ImageLayer, Layer } from '../types'
-import { BLEND_MODES, FONT_FAMILIES } from '../types'
+import { BLEND_MODES, FONT_FAMILIES, groupLabel } from '../types'
 import { useFonts, uploadFontFile } from '../fonts'
 import { loadImage } from '../export'
 
@@ -162,7 +162,11 @@ function ArrangeSection() {
   const editor = useEditor
   if (!selection.length) return null
   const multi = selection.length > 1
-  const grouped = scene.layers.some((l) => selection.includes(l.id) && l.group)
+  const selectedLayers = scene.layers.filter((l) => selection.includes(l.id))
+  const grouped = selectedLayers.some((l) => l.group)
+  // The one group the selection sits in, if it's exactly one.
+  const groupIds = [...new Set(selectedLayers.map((l) => l.group).filter(Boolean))] as string[]
+  const soleGroup = groupIds.length === 1 ? groupIds[0] : null
   const arrange = (mode: Parameters<ReturnType<typeof editor.getState>['arrangeLayers']>[0]) =>
     editor.getState().arrangeLayers(mode)
   return (
@@ -196,6 +200,16 @@ function ArrangeSection() {
             Ungroup
           </button>
         </div>
+      )}
+      {soleGroup && (
+        <label className="field">
+          <span>Group name</span>
+          <input
+            type="text"
+            value={groupLabel(scene, soleGroup)}
+            onChange={(e) => editor.getState().renameGroup(soleGroup, e.target.value)}
+          />
+        </label>
       )}
     </div>
   )
