@@ -130,11 +130,13 @@ thumbnail. `examples/ig-post-starter.json`
   edges/centers and other layers, arrow-key nudging.
 - **Align & distribute** — one click aligns a layer to the canvas or a
   multi-selection to itself; equal-spacing distribution for 3+ layers.
-- **Named groups** — ⌘G groups layers so they select and move as one, with a
-  name you can edit (⇧⌘G ungroups, alt-click reaches a single layer inside a
-  group). Each grouped row shows a group chip: click it to select the whole
-  group, double-click to rename. Groups live in `scene.json`, so the AI hands
-  you pre-grouped, pre-named composites.
+- **Named groups, as a real tree** — ⌘G folds layers into a named group row
+  (⇧⌘G ungroups). Click the ▸ triangle to open a group and see its members
+  indented beneath it; **click a member to select and move just that one**,
+  no ungrouping needed. Click the group row itself to take the whole group,
+  double-click to rename, and drag it to reorder every member at once. The
+  eye/lock on a group row applies to all its members. Groups live in
+  `scene.json`, so the AI hands you pre-grouped, pre-named composites.
 - **Range select** — click a layer, then shift-click another to select
   everything between them (⇧⌘-click works too); ⌘-click toggles one layer.
 - **Right-click menu** — copy/cut/paste, duplicate, delete, z-order

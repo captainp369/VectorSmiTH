@@ -71,6 +71,10 @@ export interface EditorState {
   /** Move the selected layers in the z-stack. */
   reorderLayers: (ids: string[], dir: ReorderDir) => void
   moveLayer: (id: string, toIndex: number) => void
+  /** Move several layers as one block (relative order kept). */
+  moveLayers: (ids: string[], toIndex: number) => void
+  /** Patch several layers in a single undo step (group visibility/lock). */
+  updateLayers: (ids: string[], patch: Partial<Layer>, opts?: { touch?: boolean }) => void
 
   setActivePage: (index: number) => void
   addPage: (duplicate?: boolean) => void
@@ -96,6 +100,24 @@ function expandGroups(layers: Layer[], ids: string[]): string[] {
   const out = new Set(ids)
   for (const l of layers) if (l.group && groups.has(l.group)) out.add(l.id)
   return [...out]
+}
+
+/**
+ * Pull the given layers into one contiguous run, positioned so the run's top
+ * sits where the topmost member was. Groups are only a tag in the schema, but
+ * a group that is contiguous in z can be shown (and dragged) as one tree node.
+ */
+function makeContiguous(layers: Layer[], ids: string[]): Layer[] {
+  const set = new Set(ids)
+  const members = layers.filter((l) => set.has(l.id))
+  if (members.length < 2) return layers
+  const rest = layers.filter((l) => !set.has(l.id))
+  let topIdx = -1
+  layers.forEach((l, i) => {
+    if (set.has(l.id)) topIdx = i
+  })
+  const below = layers.slice(0, topIdx).filter((l) => !set.has(l.id)).length
+  return [...rest.slice(0, below), ...members, ...rest.slice(below)]
 }
 
 /** Fresh group ids for copies, so a duplicated group is its own group. */
@@ -324,12 +346,13 @@ export const useEditor = create<EditorState>((set, get) => ({
         while (used.has(`Group ${n}`)) n++
         label = `Group ${n}`
       }
+      const tagged = scene.layers.map((l) =>
+        ids.includes(l.id) ? ({ ...l, group, touched: true } as Layer) : l,
+      )
       return {
         ...scene,
         groups: { ...(scene.groups ?? {}), [group]: label },
-        layers: scene.layers.map((l) =>
-          ids.includes(l.id) ? ({ ...l, group, touched: true } as Layer) : l,
-        ),
+        layers: makeContiguous(tagged, ids),
       }
     })
   },
@@ -387,6 +410,34 @@ export const useEditor = create<EditorState>((set, get) => ({
       layers.splice(Math.max(0, Math.min(layers.length, toIndex)), 0, { ...layer, touched: true })
       return { ...scene, layers }
     }),
+
+  /** `toIndex` counts only layers outside `ids`. */
+  moveLayers: (ids, toIndex) =>
+    get().commit((scene) => {
+      const set = new Set(ids)
+      const moving = scene.layers.filter((l) => set.has(l.id))
+      if (!moving.length) return scene
+      const rest = scene.layers.filter((l) => !set.has(l.id))
+      const at = Math.max(0, Math.min(rest.length, toIndex))
+      return {
+        ...scene,
+        layers: [
+          ...rest.slice(0, at),
+          ...moving.map((l) => ({ ...l, touched: true }) as Layer),
+          ...rest.slice(at),
+        ],
+      }
+    }),
+
+  updateLayers: (ids, patch, opts) =>
+    get().commit((scene) => ({
+      ...scene,
+      layers: scene.layers.map((l) =>
+        ids.includes(l.id)
+          ? ({ ...l, ...patch, ...(opts?.touch === false ? {} : { touched: true }) } as Layer)
+          : l,
+      ),
+    })),
 
   setActivePage: (index) =>
     set((s) => ({

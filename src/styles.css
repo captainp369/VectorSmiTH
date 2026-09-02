@@ -310,36 +310,50 @@ textarea:focus {
   padding: 2px 6px;
 }
 
-.layer-row.grouped {
-  border-left-color: #5a4a7a;
+.group-block {
+  border-left: 2px solid #4a3d68;
 }
 
-.layer-row.grouped.selected {
-  border-left-color: #a155ff;
+.group-row .layer-name {
+  font-weight: 600;
 }
 
-.group-chip {
+.layer-row.group-row {
+  border-left-color: transparent;
+  padding-left: 4px;
+}
+
+.layer-row.group-row.partial {
+  background: #23202e;
+}
+
+.layer-row.child {
+  padding-left: 22px;
+  border-left-color: transparent;
+}
+
+.disclosure {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  width: 16px;
+  color: #9a9aa5;
   flex-shrink: 0;
-  max-width: 84px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 1px 7px;
-  font-size: 10px;
-  line-height: 16px;
-  border-radius: 9px;
-  background: #3a2f52;
-  border-color: #52407a;
-  color: #cbb6ee;
-}
-
-.group-chip:hover:not(:disabled) {
-  background: #4a3b68;
-}
-
-.layer-row input.group-rename {
-  flex: 0 1 96px;
   font-size: 11px;
+}
+
+.disclosure:hover {
+  background: none;
+  color: #e6e6ea;
+}
+
+.group-count {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #8b8d98;
+  background: #2c2937;
+  border-radius: 8px;
+  padding: 1px 6px;
 }
 
 .icon-btn {
