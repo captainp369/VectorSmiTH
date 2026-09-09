@@ -157,6 +157,7 @@ function FillEditor({ fill, onChange, scrubFor }: {
 }
 
 function ArrangeSection() {
+  const rotBase = useRef(0)
   const scene = useScene()
   const selection = useEditor((s) => s.selection)
   const editor = useEditor
@@ -167,12 +168,31 @@ function ArrangeSection() {
   // The one group the selection sits in, if it's exactly one.
   const groupIds = [...new Set(selectedLayers.map((l) => l.group).filter(Boolean))] as string[]
   const soleGroup = groupIds.length === 1 ? groupIds[0] : null
+  // Align/distribute move rigid units, so the buttons must count units too:
+  // a fully-selected 3-layer group is ONE thing to space, not three. A group
+  // that is only partly selected is not rigid, so its members count singly.
+  const unitCount = (() => {
+    const total = new Map<string, number>()
+    for (const l of scene.layers) {
+      if (l.group && !l.locked) total.set(l.group, (total.get(l.group) ?? 0) + 1)
+    }
+    let n = 0
+    const seen = new Map<string, number>()
+    for (const l of selectedLayers) {
+      if (!l.group) { n++; continue }
+      seen.set(l.group, (seen.get(l.group) ?? 0) + 1)
+    }
+    for (const [gid, count] of seen) n += count >= 2 && count === total.get(gid) ? 1 : count
+    return n
+  })()
   const arrange = (mode: Parameters<ReturnType<typeof editor.getState>['arrangeLayers']>[0]) =>
     editor.getState().arrangeLayers(mode)
+  const rotations = [...new Set(selectedLayers.map((l) => l.rotation))]
+  const shownRotation = rotations.length === 1 ? rotations[0] : 0
   return (
     <div className="arrange">
       <div className="arrange-title">
-        Align {multi ? 'selection' : 'to canvas'}
+        Align {unitCount > 1 ? 'selection' : 'to canvas'}
       </div>
       <div className="arrange-grid">
         <button title="Align left" onClick={() => arrange('left')}>⇤</button>
@@ -182,7 +202,23 @@ function ArrangeSection() {
         <button title="Center vertically" onClick={() => arrange('center-v')}>⇳</button>
         <button title="Align bottom" onClick={() => arrange('bottom')}>⤓</button>
       </div>
-      {selection.length >= 3 && (
+      {/* Rotation of a selection is relative — several layers have no single
+          angle — so the field scrubs by delta off whatever it shows, exactly
+          like the single-layer Rotation field. */}
+      <Num
+        label={multi ? 'Rotate selection' : 'Rotate'}
+        value={shownRotation}
+        onScrubStart={() => {
+          editor.getState().checkpoint()
+          rotBase.current = shownRotation
+        }}
+        onScrub={(v) => {
+          editor.getState().rotateSelection(v - rotBase.current, { transient: true })
+          rotBase.current = v
+        }}
+        onChange={(v) => editor.getState().rotateSelection(v - shownRotation)}
+      />
+      {unitCount >= 3 && (
         <div className="arrange-grid two">
           <button title="Equal horizontal spacing" onClick={() => arrange('distribute-h')}>↔ Space</button>
           <button title="Equal vertical spacing" onClick={() => arrange('distribute-v')}>↕ Space</button>

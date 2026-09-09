@@ -6,3 +6,6 @@ dist/
 # per-user working files — the live document and your uploaded assets/fonts
 scene.json
 assets/
+
+# personal per-video thumbnail projects
+project/

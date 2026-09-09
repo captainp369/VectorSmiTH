@@ -4,6 +4,7 @@ import type Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { useEditor, useScene } from '../store'
 import type { ImageLayer, Layer, Scene, TextLayer } from '../types'
+import { layerBBox } from '../types'
 import { layerConfig } from '../konvaConfig'
 import { loadImage } from '../export'
 import ContextMenu, { type MenuState } from './ContextMenu'
@@ -198,6 +199,12 @@ export default function CanvasStage() {
   const cropTrRef = useRef<Konva.Transformer>(null)
   const nodeRefs = useRef(new Map<string, Konva.Node>())
   const dragOrigins = useRef<Map<string, { x: number; y: number }> | null>(null)
+  /** Pointer position (scene coords) where the current drag gesture began. */
+  const dragFrom = useRef<{ x: number; y: number } | null>(null)
+  /** The layer the user actually grabbed — snapping follows its box. */
+  const dragAnchor = useRef<string | null>(null)
+  /** Last delta applied, so dragend commits the same numbers it drew. */
+  const dragDelta = useRef<{ dx: number; dy: number } | null>(null)
   const cropGesture = useRef<{
     x: number
     y: number
@@ -276,6 +283,16 @@ export default function CanvasStage() {
             return !!l && !l.locked && l.visible && n.id() !== editingTextId
           })
     tr.nodes(nodes)
+    // Konva's Transformer proxies a multi-node drag itself: on the first
+    // dragmove it offsets every other attached node and calls startDrag() on
+    // each (Transformer._proxyDrag). We already move the whole selection from a
+    // single pointer delta, so that proxy is a second writer fighting the first
+    // — each node ends up with its own captured offset, which is exactly what
+    // pulled groups apart. Drop just those two listeners and own the gesture.
+    // The transformer still tracks the nodes: it follows them via
+    // xChange/yChange/absoluteTransformChange, which stay attached.
+    const ns = `.${(tr as unknown as { _getEventNamespace: () => string })._getEventNamespace()}`
+    for (const n of nodes) n.off(`dragstart${ns} dragmove${ns}`)
     tr.getLayer()?.batchDraw()
   }, [selection, scene.layers, editingTextId, croppingId])
 
@@ -313,90 +330,113 @@ export default function CanvasStage() {
     else if (!selection.includes(layer.id)) editor.getState().select([layer.id])
   }
 
-  const handleDragStart = (layer: Layer) => (e: KonvaEventObject<DragEvent>) => {
-    editor.getState().checkpoint()
-    let sel = editor.getState().selection
+  /*
+   * Dragging a multi-layer selection.
+   *
+   * Konva's Transformer already proxies a group drag: on the first dragmove it
+   * offsets every other attached node and then calls startDrag() on each one
+   * (Transformer._proxyDrag). So during one gesture EVERY selected node is in
+   * its own drag session, and dragstart/dragmove/dragend each fire many times
+   * with different targets. Two systems both moving the same nodes, each with
+   * its own captured offset, is what pulled groups apart.
+   *
+   * So none of this reads a Konva node's position. The gesture is defined by
+   * the POINTER: one delta, applied to every member from its scene origin, on
+   * every event. Each handler is idempotent, the last writer always wins, and
+   * dragend commits the delta rather than whatever Konva left on the nodes.
+   */
+  const handleDragStart = (layer: Layer) => () => {
+    if (dragOrigins.current) return // a later node joining the same gesture
+    const state = editor.getState()
+    state.checkpoint()
+    let sel = state.selection
     if (!sel.includes(layer.id)) {
-      sel = [layer.id]
-      editor.getState().select(sel)
+      state.select([layer.id])
+      sel = editor.getState().selection
     }
+    const p = stageRef.current?.getPointerPosition()
+    dragFrom.current = p ? { x: p.x / zoom, y: p.y / zoom } : null
+    dragAnchor.current = layer.id
     const origins = new Map<string, { x: number; y: number }>()
     for (const id of sel) {
-      const n = nodeRefs.current.get(id)
-      if (n) origins.set(id, { x: n.x(), y: n.y() })
+      const l = scene.layers.find((x) => x.id === id)
+      if (l && !l.locked) origins.set(id, { x: l.x, y: l.y })
     }
     dragOrigins.current = origins
+    dragDelta.current = { dx: 0, dy: 0 }
   }
 
-  const handleDragMove = (layer: Layer) => (e: KonvaEventObject<DragEvent>) => {
-    const node = e.target
-    const stage = stageRef.current
-    if (!stage) return
-    const threshold = SNAP_SCREEN_PX / zoom
-
-    // Snap the dragged node's bounding box to canvas edges/centers and sibling boxes.
-    const box = node.getClientRect({ relativeTo: stage as unknown as Konva.Container })
-    const sel = editor.getState().selection
-    const vTargets = [0, scene.width / 2, scene.width]
-    const hTargets = [0, scene.height / 2, scene.height]
-    for (const [id, other] of nodeRefs.current) {
-      if (sel.includes(id)) continue
-      const l = scene.layers.find((x) => x.id === id)
-      if (!l || !l.visible) continue
-      const b = other.getClientRect({ relativeTo: stage as unknown as Konva.Container })
-      vTargets.push(b.x, b.x + b.width / 2, b.x + b.width)
-      hTargets.push(b.y, b.y + b.height / 2, b.y + b.height)
-    }
-
-    const g: Guides = { v: [], h: [] }
-    let dx = 0
-    let dy = 0
-    for (const edge of [box.x, box.x + box.width / 2, box.x + box.width]) {
-      const s = snapValue(edge + dx, vTargets, threshold)
-      if (s) {
-        dx = s.value - edge
-        g.v.push(s.line)
-        break
-      }
-    }
-    for (const edge of [box.y, box.y + box.height / 2, box.y + box.height]) {
-      const s = snapValue(edge + dy, hTargets, threshold)
-      if (s) {
-        dy = s.value - edge
-        g.h.push(s.line)
-        break
-      }
-    }
-    if (dx || dy) node.position({ x: node.x() + dx, y: node.y() + dy })
-    setGuides(g)
-
-    // Move the rest of the selection by the same delta.
+  const handleDragMove = () => () => {
     const origins = dragOrigins.current
-    if (origins && origins.size > 1) {
-      const start = origins.get(node.id())
-      if (start) {
-        const delta = { x: node.x() - start.x, y: node.y() - start.y }
-        for (const [id, orig] of origins) {
-          if (id === node.id()) continue
-          const n = nodeRefs.current.get(id)
-          if (n) n.position({ x: orig.x + delta.x, y: orig.y + delta.y })
+    const from = dragFrom.current
+    const stage = stageRef.current
+    if (!origins || !from || !stage) return
+    const p = stage.getPointerPosition()
+    if (!p) return
+    let dx = p.x / zoom - from.x
+    let dy = p.y / zoom - from.y
+
+    // Snap the grabbed layer's box to canvas edges/centres and other layers'
+    // boxes. Boxes come from the scene (rotation-aware), not from getClientRect,
+    // so they cannot be polluted by nodes Konva is mid-drag on.
+    const anchor = scene.layers.find((l) => l.id === dragAnchor.current)
+    const g: Guides = { v: [], h: [] }
+    if (anchor) {
+      const threshold = SNAP_SCREEN_PX / zoom
+      const base = layerBBox(anchor)
+      const vTargets = [0, scene.width / 2, scene.width]
+      const hTargets = [0, scene.height / 2, scene.height]
+      for (const l of scene.layers) {
+        if (origins.has(l.id) || !l.visible) continue
+        const b = layerBBox(l)
+        vTargets.push(b.x, b.x + b.w / 2, b.x + b.w)
+        hTargets.push(b.y, b.y + b.h / 2, b.y + b.h)
+      }
+      for (const edge of [base.x + dx, base.x + dx + base.w / 2, base.x + dx + base.w]) {
+        const snap = snapValue(edge, vTargets, threshold)
+        if (snap) {
+          dx += snap.value - edge
+          g.v.push(snap.line)
+          break
+        }
+      }
+      for (const edge of [base.y + dy, base.y + dy + base.h / 2, base.y + dy + base.h]) {
+        const snap = snapValue(edge, hTargets, threshold)
+        if (snap) {
+          dy += snap.value - edge
+          g.h.push(snap.line)
+          break
         }
       }
     }
+
+    for (const [id, o] of origins) {
+      const n = nodeRefs.current.get(id)
+      if (n) n.position({ x: o.x + dx, y: o.y + dy })
+    }
+    dragDelta.current = { dx, dy }
+    setGuides(g)
   }
 
   const handleDragEnd = () => {
+    const origins = dragOrigins.current
+    const moved = dragDelta.current
+    dragOrigins.current = null
+    dragFrom.current = null
+    dragAnchor.current = null
+    dragDelta.current = null
     setGuides({ v: [], h: [] })
-    const sel = editor.getState().selection
+    if (!origins || !moved) return
+    if (!moved.dx && !moved.dy) return
     editor.getState().transient((s: Scene) => ({
       ...s,
       layers: s.layers.map((l) => {
-        if (!sel.includes(l.id)) return l
-        const n = nodeRefs.current.get(l.id)
-        return n ? ({ ...l, x: n.x(), y: n.y(), touched: true } as Layer) : l
+        const o = origins.get(l.id)
+        return o
+          ? ({ ...l, x: o.x + moved.dx, y: o.y + moved.dy, touched: true } as Layer)
+          : l
       }),
     }))
-    dragOrigins.current = null
   }
 
   const handleTransformEnd = () => {
@@ -606,7 +646,7 @@ export default function CanvasStage() {
         registerRef={registerRef}
         onSelect={handleSelect(layer)}
         onDragStart={cropping ? handleCropDragStart(layer as ImageLayer) : handleDragStart(layer)}
-        onDragMove={cropping ? handleCropDragMove(layer as ImageLayer) : handleDragMove(layer)}
+        onDragMove={cropping ? handleCropDragMove(layer as ImageLayer) : handleDragMove()}
         onDragEnd={cropping ? handleCropDragEnd : handleDragEnd}
         onTransformStart={cropping ? handleCropTransformStart(layer as ImageLayer) : undefined}
         onTransform={cropping ? handleCropTransform(layer as ImageLayer) : undefined}

@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid'
 import type { Layer, Page, Project, Scene } from './types'
 import { defaultProject } from './types'
 import type { ArrangeMode, ReorderDir } from './arrange'
-import { arrangeDeltas, reorderedLayers } from './arrange'
+import { arrangeDeltas, rotateDeltas, reorderedLayers } from './arrange'
 
 const HISTORY_LIMIT = 60
 
@@ -68,6 +68,8 @@ export interface EditorState {
   ungroupLayers: (ids: string[]) => void
   /** Align or distribute the selected layers (see arrange.ts). */
   arrangeLayers: (mode: ArrangeMode) => void
+  /** Rotate the whole selection rigidly about its bounding-box centre. */
+  rotateSelection: (degrees: number, opts?: { transient?: boolean }) => void
   /** Move the selected layers in the z-stack. */
   reorderLayers: (ids: string[], dir: ReorderDir) => void
   moveLayer: (id: string, toIndex: number) => void
@@ -386,6 +388,22 @@ export const useEditor = create<EditorState>((set, get) => ({
       layers: page.layers.map((l) => {
         const d = deltas.get(l.id)
         return d ? ({ ...l, x: l.x + d.dx, y: l.y + d.dy, touched: true } as Layer) : l
+      }),
+    }))
+  },
+
+  rotateSelection: (degrees, opts) => {
+    const s = get()
+    const scene = s.project.pages[s.activePage]
+    if (!scene) return
+    const next = rotateDeltas(scene, s.selection, degrees)
+    if (!next.size) return
+    const write = opts?.transient ? s.transient : s.commit
+    write((page) => ({
+      ...page,
+      layers: page.layers.map((l) => {
+        const r = next.get(l.id)
+        return r ? ({ ...l, ...r, touched: true } as Layer) : l
       }),
     }))
   },
