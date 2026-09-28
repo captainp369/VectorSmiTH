@@ -193,8 +193,10 @@ full-frame photos ≥ 1920px wide. Never upscale past ~130%.
 
 ```bash
 # thick white sticker border around a cutout (pack 3B)
+# (-background white -alpha shape must stay inside the parentheses: outside,
+#  it also applies to the subject and turns the whole cutout white)
 magick subject.png \( +clone -alpha extract -morphology dilate disk:18 \
-  -threshold 1% \) -compose DstOver -background white -alpha shape \
+  -threshold 1% -background white -alpha shape \) +swap -compose over \
   -composite subject-sticker.png
 
 # duotone for Editorial Paper (grayscale → ink/paper map)
