@@ -97,6 +97,13 @@ export default function ContextMenu({ menu, onClose }: { menu: MenuState; onClos
             Delete <kbd>⌫</kbd>
           </button>
           <hr />
+          <button onClick={run(() => state().flipSelection('x'))}>
+            Flip horizontal <kbd>⇧H</kbd>
+          </button>
+          <button onClick={run(() => state().flipSelection('y'))}>
+            Flip vertical <kbd>⇧V</kbd>
+          </button>
+          <hr />
           <button onClick={run(() => state().reorderLayers(state().selection, 'front'))}>
             Bring to front <kbd>⇧⌘]</kbd>
           </button>

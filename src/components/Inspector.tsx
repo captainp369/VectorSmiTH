@@ -218,6 +218,14 @@ function ArrangeSection() {
         }}
         onChange={(v) => editor.getState().rotateSelection(v - shownRotation)}
       />
+      <div className="arrange-grid two">
+        <button title="Mirror left-right" onClick={() => editor.getState().flipSelection('x')}>
+          ⇋ Flip H
+        </button>
+        <button title="Mirror top-bottom" onClick={() => editor.getState().flipSelection('y')}>
+          ⇵ Flip V
+        </button>
+      </div>
       {unitCount >= 3 && (
         <div className="arrange-grid two">
           <button title="Equal horizontal spacing" onClick={() => arrange('distribute-h')}>↔ Space</button>

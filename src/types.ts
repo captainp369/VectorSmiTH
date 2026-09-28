@@ -41,6 +41,9 @@ export interface LayerBase {
   group?: string
   /** How this layer's pixels combine with the layers below (default: normal). */
   blend?: BlendMode
+  /** Mirror the layer's content left-right / top-bottom, in place. */
+  flipX?: boolean
+  flipY?: boolean
 }
 
 export interface ImageLayer extends LayerBase {

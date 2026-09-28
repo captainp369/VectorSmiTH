@@ -1,5 +1,6 @@
 import type { Layer, Scene } from './types'
 import { layerBBox } from './types'
+import { flipOffset } from './konvaConfig'
 
 export type AlignMode = 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom'
 export type DistributeMode = 'distribute-h' | 'distribute-v'
@@ -145,6 +146,47 @@ export function rotateDeltas(
       y: r2(cy + ox * sin + oy * cos),
       rotation: r2((((l.rotation + degrees) % 360) + 360) % 360),
     })
+  }
+  return out
+}
+
+export type FlipAxis = 'x' | 'y'
+
+/**
+ * Mirror the selection about its own bounding box.
+ *
+ * A true mirror is more than toggling the flag: it also reverses the sense of
+ * rotation and moves the layer to the other side of the axis. Writing the
+ * mirrored render M·(P + R(θ)·S·(p−O)) back into the same
+ * P' + R(θ')·S'·(p−O') form gives θ' = −θ and
+ * P' = M·P + 2c + R(−θ)·S'·(O'−O) — which reduces to the terms below, and
+ * comes out identical whether the layer was flipped already or not.
+ *
+ * A single selected layer mirrors about its own centre, so it flips in place.
+ */
+export function flipUpdates(
+  scene: Scene,
+  ids: string[],
+  axis: FlipAxis,
+): Map<string, { x: number; y: number; rotation: number; flipX?: boolean; flipY?: boolean }> {
+  const out = new Map<string, { x: number; y: number; rotation: number; flipX?: boolean; flipY?: boolean }>()
+  const picked = scene.layers.filter((l) => ids.includes(l.id) && !l.locked)
+  if (!picked.length) return out
+  const b = union(picked.map(layerBBox))
+  const c = axis === 'x' ? b.x + b.w / 2 : b.y + b.h / 2
+  const r2 = (n: number) => Math.round(n * 100) / 100
+  for (const l of picked) {
+    const { ox, oy } = flipOffset(l)
+    const t = (l.rotation * Math.PI) / 180
+    const cos = Math.cos(t)
+    const sin = Math.sin(t)
+    const rotation = r2((((-l.rotation % 360) + 360) % 360))
+    out.set(
+      l.id,
+      axis === 'x'
+        ? { x: r2(2 * c - l.x - ox * cos), y: r2(l.y + ox * sin), rotation, flipX: !l.flipX }
+        : { x: r2(l.x - oy * sin), y: r2(2 * c - l.y - oy * cos), rotation, flipY: !l.flipY },
+    )
   }
   return out
 }

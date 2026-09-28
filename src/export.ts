@@ -1,7 +1,7 @@
 import Konva from 'konva'
 import type { Scene, Layer, Project, TextLayer } from './types'
 import { gradientPoints, shapePoints } from './types'
-import { layerConfig } from './konvaConfig'
+import { layerConfig, flipTransform } from './konvaConfig'
 
 const imageCache = new Map<string, Promise<HTMLImageElement>>()
 
@@ -103,7 +103,13 @@ export async function renderSVG(scene: Scene): Promise<Blob> {
 
   for (const layer of scene.layers) {
     if (!layer.visible) continue
-    const tf = `transform="translate(${layer.x} ${layer.y}) rotate(${layer.rotation})"`
+    // Same order Konva composes in: translate, rotate, scale, un-offset.
+    const f = flipTransform(layer)
+    const flip =
+      f.scaleX || f.scaleY
+        ? ` scale(${f.scaleX ?? 1} ${f.scaleY ?? 1}) translate(${-(f.offsetX ?? 0)} ${-(f.offsetY ?? 0)})`
+        : ''
+    const tf = `transform="translate(${layer.x} ${layer.y}) rotate(${layer.rotation})${flip}"`
     const op =
       (layer.opacity < 1 ? ` opacity="${layer.opacity}"` : '') +
       (layer.blend && layer.blend !== 'normal' ? ` style="mix-blend-mode:${layer.blend}"` : '')

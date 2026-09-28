@@ -18,6 +18,38 @@ function centerFill(fill: Fill, r: number): Record<string, unknown> {
  * so what you see is exactly what exports.
  * Image layers get their `image` element injected by the caller.
  */
+/**
+ * The offset a flip mirrors around, in the layer's own local space.
+ *
+ * Mirroring is scale(-1) applied BEFORE the rotation, so the layer's box and
+ * its rotation pivot both stay exactly where they were and only the content
+ * turns over. Top-left-origin layers therefore mirror around their own far
+ * edge; circle/polygon/star already draw around x,y, and a line's points are
+ * relative to it, so for those the origin IS the mirror axis.
+ */
+export function flipOffset(layer: Layer): { ox: number; oy: number } {
+  switch (layer.type) {
+    case 'image':
+    case 'rect':
+      return { ox: layer.width, oy: layer.height }
+    case 'text':
+      // Konva wraps text, so a wrapped block's real height is not known here;
+      // this is exact for unwrapped text and close enough otherwise.
+      return { ox: layer.width, oy: layer.fontSize * layer.lineHeight * layer.text.split('\n').length }
+    default:
+      return { ox: 0, oy: 0 }
+  }
+}
+
+export function flipTransform(layer: Layer): Record<string, number> {
+  if (!layer.flipX && !layer.flipY) return {}
+  const { ox, oy } = flipOffset(layer)
+  return {
+    ...(layer.flipX ? { scaleX: -1, offsetX: ox } : {}),
+    ...(layer.flipY ? { scaleY: -1, offsetY: oy } : {}),
+  }
+}
+
 export function layerConfig(layer: Layer): { cls: string; config: Record<string, unknown> } {
   const base = {
     id: layer.id,
@@ -29,6 +61,7 @@ export function layerConfig(layer: Layer): { cls: string; config: Record<string,
     ...(layer.blend && layer.blend !== 'normal'
       ? { globalCompositeOperation: layer.blend }
       : {}),
+    ...flipTransform(layer),
   }
 
   switch (layer.type) {

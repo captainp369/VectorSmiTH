@@ -139,6 +139,11 @@ thumbnail. `examples/ig-post-starter.json`
   `scene.json`, so the AI hands you pre-grouped, pre-named composites.
 - **Range select** — click a layer, then shift-click another to select
   everything between them (⇧⌘-click works too); ⌘-click toggles one layer.
+- **Flip** — mirror a layer or a whole selection, horizontally or vertically
+  (⇧H / ⇧V, or the inspector buttons). A single layer flips in place; a
+  multi-selection mirrors as a unit about its own bounding box, so a grouped
+  composite turns over without coming apart. Rotation is carried through
+  correctly, and the flip survives PNG/JPG *and* SVG export.
 - **Right-click menu** — copy/cut/paste, duplicate, delete, z-order
   (also ⌘] / ⌘[), group/ungroup, crop, lock.
 - **Layers panel** — drag to reorder z-index, show/hide, lock, rename

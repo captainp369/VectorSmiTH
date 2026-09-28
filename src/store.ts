@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid'
 import type { Layer, Page, Project, Scene } from './types'
 import { defaultProject } from './types'
 import type { ArrangeMode, ReorderDir } from './arrange'
-import { arrangeDeltas, rotateDeltas, reorderedLayers } from './arrange'
+import { arrangeDeltas, rotateDeltas, flipUpdates, reorderedLayers } from './arrange'
+import type { FlipAxis } from './arrange'
 
 const HISTORY_LIMIT = 60
 
@@ -70,6 +71,8 @@ export interface EditorState {
   arrangeLayers: (mode: ArrangeMode) => void
   /** Rotate the whole selection rigidly about its bounding-box centre. */
   rotateSelection: (degrees: number, opts?: { transient?: boolean }) => void
+  /** Mirror the selection about its own bounding box. */
+  flipSelection: (axis: FlipAxis) => void
   /** Move the selected layers in the z-stack. */
   reorderLayers: (ids: string[], dir: ReorderDir) => void
   moveLayer: (id: string, toIndex: number) => void
@@ -404,6 +407,26 @@ export const useEditor = create<EditorState>((set, get) => ({
       layers: page.layers.map((l) => {
         const r = next.get(l.id)
         return r ? ({ ...l, ...r, touched: true } as Layer) : l
+      }),
+    }))
+  },
+
+  flipSelection: (axis) => {
+    const s = get()
+    const scene = s.project.pages[s.activePage]
+    if (!scene) return
+    const ups = flipUpdates(scene, s.selection, axis)
+    if (!ups.size) return
+    s.commit((page) => ({
+      ...page,
+      layers: page.layers.map((l) => {
+        const u = ups.get(l.id)
+        if (!u) return l
+        const next = { ...l, ...u, touched: true } as Layer
+        // keep the document clean: a flag that is back to false just goes away
+        if (next.flipX === false) delete next.flipX
+        if (next.flipY === false) delete next.flipY
+        return next
       }),
     }))
   },

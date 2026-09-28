@@ -45,6 +45,16 @@ export default function App() {
         else editor.groupLayers(editor.selection)
         return
       }
+      // Shift+H / Shift+V, no modifier key — these must not fire while typing,
+      // which the isTypingTarget guard above already handles.
+      if (!mod && e.shiftKey && editor.selection.length) {
+        const k = e.key.toLowerCase()
+        if (k === 'h' || k === 'v') {
+          e.preventDefault()
+          editor.flipSelection(k === 'h' ? 'x' : 'y')
+          return
+        }
+      }
       if (mod && (e.key === ']' || e.key === '}')) {
         e.preventDefault()
         if (editor.selection.length) editor.reorderLayers(editor.selection, e.shiftKey ? 'front' : 'forward')

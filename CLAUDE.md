@@ -48,7 +48,7 @@ simply appears on the next slide.
 
 All layers share: `id`, `name`, `x`, `y`, `rotation` (deg, clockwise, around
 top-left), `opacity` (0–1), `visible`, `locked`, optional `touched`, optional
-`group`, and optional `blend`.
+`group`, optional `blend`, and optional `flipX`/`flipY`.
 
 **`group`** (string) — layers with the same group id select and move together
 in the UI. **Group generously**: anything the user thinks of as one thing (a
@@ -57,6 +57,11 @@ should share a group id — this is what makes manual editing fast. Give groups
 readable names via the page-level `groups` map (`"groups": {"cap1": "Caption
 strip"}`, id → name); a group id with no entry displays as-is, so a readable
 id like `"group": "ticker"` works too.
+
+**`flipX` / `flipY`** (boolean) — mirror the layer's content left-right or
+top-bottom. The layer's box, position and rotation pivot do not move; only the
+content turns over. Useful for facing a cutout the other way without a second
+asset.
 
 **`blend`** — `"multiply"`, `"screen"`, `"overlay"`, `"darken"`, `"lighten"`,
 `"soft-light"`, `"hard-light"`, `"color-dodge"`, `"color-burn"`,
